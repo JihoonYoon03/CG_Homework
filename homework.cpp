@@ -125,7 +125,7 @@ GLvoid drawScene()
 	GLint minimap_y = winHeight - winWidth / 5 - 10;
 	glViewport(minimap_x, minimap_y, winWidth / 5, winWidth / 5);
 
-	if (perspectiveOn) projection = glm::perspective(glm::radians(45.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
+	if (perspectiveOn) projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
 	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
 
 	view = glm::lookAt(EYE_minimap, AT_minimap, UP_minimap);

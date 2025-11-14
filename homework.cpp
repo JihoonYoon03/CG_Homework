@@ -29,14 +29,18 @@ glm::vec3 bgColor = { 0.02f, 0.02f, 0.02f };
 Maze* maze;
 DisplayBasis* XYZ;
 
-glm::vec3 EYE{ 0.0f, 3.0f, 5.0f };
-glm::vec3 AT{ 0.0f, 1.0f, 0.0f };
-glm::vec3 UP{ 0.0f, 1.0f, 0.0f };
+glm::vec3 EYE_freecam{ 0.0f, 3.0f, 5.0f };
+glm::vec3 AT_freecam{ 0.0f, 1.0f, 0.0f };
+glm::vec3 UP_freecam{ 0.0f, 1.0f, 0.0f };
 GLfloat camera_speed = 0.1f, camera_y_angle = 0.0f, camera_mov_dir = 0.0f, camera_rot_dir = 0.0f;
+
+glm::vec3 EYE_minimap{ 0.0f, 6.0f, 0.01f };
+glm::vec3 AT_minimap{ 0.0f, 0.0f, 0.0f };
+glm::vec3 UP_minimap{ 0.0f, 1.0f, 0.0f };
 
 glm::vec3 lightPos{ 3.0f, 3.0f, 3.0f };
 glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
-glm::vec3 viewPos = EYE;
+glm::vec3 viewPos = EYE_freecam;
 float shininess = 32.0f;
 
 bool perspectiveOn = true;
@@ -95,6 +99,8 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(shaderProgramID);
 
+	// 메인 카메라
+	glViewport(0, 0, winWidth, winHeight);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
 	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), shininess);
@@ -104,7 +110,7 @@ GLvoid drawScene()
 	if (perspectiveOn) projection = glm::perspective(glm::radians(55.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
 	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
 
-	glm::mat4 view = glm::lookAt(EYE, AT, UP);
+	glm::mat4 view = glm::lookAt(EYE_freecam, AT_freecam, UP_freecam);
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -113,6 +119,21 @@ GLvoid drawScene()
 	glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), 0.0f);
 	XYZ->Render();
 	maze->Render(shaderProgramID);
+
+	// 미니맵 카메라, 정사각형 범위
+	GLint minimap_x = winWidth - winWidth / 5 - 10;
+	GLint minimap_y = winHeight - winWidth / 5 - 10;
+	glViewport(minimap_x, minimap_y, winWidth / 5, winWidth / 5);
+
+	if (perspectiveOn) projection = glm::perspective(glm::radians(45.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
+	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
+
+	view = glm::lookAt(EYE_minimap, AT_minimap, UP_minimap);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+	maze->Render(shaderProgramID);
+
 	glutSwapBuffers();
 }
 
@@ -135,8 +156,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'z': case 'Z':
 		if (perspectiveOn) {
 			camera_mov_dir = key == 'z' ? -1.0f : 1.0f;
-			EYE += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
-			AT += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			EYE_freecam += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			AT_freecam += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
 		}
 		break;
 	case 'm':
@@ -176,7 +197,7 @@ GLvoid TimerFunc(int value)
 	}
 	if (camera_rot_dir) {
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(camera_rot_dir), glm::vec3(0.0f, 1.0f, 0.0f));
-		EYE = glm::vec3(rotation * glm::vec4(EYE, 1.0f));
+		EYE_freecam = glm::vec3(rotation * glm::vec4(EYE_freecam, 1.0f));
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);

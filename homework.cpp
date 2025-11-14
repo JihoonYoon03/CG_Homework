@@ -24,7 +24,7 @@ GLuint shaderProgramID;
 GLuint vertexShader;
 GLuint fragmentShader;
 
-glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
+glm::vec3 bgColor = { 0.02f, 0.02f, 0.02f };
 
 Maze* maze;
 DisplayBasis* XYZ;
@@ -34,7 +34,7 @@ glm::vec3 AT{ 0.0f, 1.0f, 0.0f };
 glm::vec3 UP{ 0.0f, 1.0f, 0.0f };
 GLfloat camera_speed = 0.1f, camera_y_angle = 0.0f, camera_mov_dir = 0.0f, camera_rot_dir = 0.0f;
 
-glm::vec3 lightPos{ 1.0f, 1.0f, 1.0f };
+glm::vec3 lightPos{ 3.0f, 3.0f, 3.0f };
 glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
 glm::vec3 viewPos = EYE;
 float shininess = 32.0f;
@@ -48,6 +48,8 @@ void main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(winWidth, winHeight);
 	glutCreateWindow("Example1");
+
+	srand((unsigned int)time(0));
 
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -107,6 +109,7 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
+	glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), 0.0f);
 	XYZ->Render();
 	maze->Render(shaderProgramID);
 	glutSwapBuffers();
@@ -135,6 +138,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			AT += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
 		}
 		break;
+	case 'm':
+		maze->setRoofMoving(true);
+		break;
+	case 'M':
+		maze->setRoofMoving(false);
+		break;
 	case 'y': case 'Y':
 		if (camera_rot_dir == 0.0f)
 			camera_rot_dir = key == 'y' ? -1.0f : 1.0f;
@@ -151,6 +160,9 @@ GLvoid TimerFunc(int value)
 {
 	if (maze->animating()) {
 		maze->startingAnimation();
+	}
+	else if (maze->roofMoving()) {
+		maze->roofAnimation();
 	}
 	if (camera_rot_dir) {
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(camera_rot_dir), glm::vec3(0.0f, 1.0f, 0.0f));

@@ -8,11 +8,21 @@ Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 
 	transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 	transform = glm::scale(transform, scaling);
 	
+	GLfloat upper = 0, lower = 100.0f * scaling.y;
 	for (int i = 0; i < 24; i++) {
 		glm::vec4 transformedVertex = transform * glm::vec4(vertices[i], 1.0f);
 		vertices[i] = glm::vec3(transformedVertex);
+
+		if (vertices[i].y > upper) upper = vertices[i].y;
+		if (vertices[i].y < lower) lower = vertices[i].y;
+
 		colors[i] = color;
 	}
+
+	roof_move_cap_upper = upper + static_cast<GLfloat>(rand()) / RAND_MAX * 1.4f;
+	roof_move_cap_lower = static_cast<GLfloat>(rand()) / RAND_MAX * (lower / 2) + 0.05f;
+	roof_move_speed = static_cast<GLfloat>(rand()) / RAND_MAX * 0.05f + 0.005f;
+	roof_move_amount = 0.0f;
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VERTEX);
@@ -67,6 +77,15 @@ void Cube::move(glm::vec3 amount) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
+void Cube::roofMove() {
+	GLfloat temp = roof_move_amount + roof_move_speed;
+	if (temp >= roof_move_cap_upper || temp <= roof_move_cap_lower) {
+		temp = temp >= roof_move_cap_upper ? roof_move_cap_upper : roof_move_cap_lower;
+		roof_move_speed = -roof_move_speed;
+	}
+	roof_move_amount = temp;
+}
+
 void Cube::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -75,8 +94,6 @@ void Cube::Render() {
 Maze::Maze(int row, int col) : row(row), col(col) {
 	GLfloat widthPerCol = width / col;
 	GLfloat lengthPerRow = length / row;
-
-	srand((unsigned int)time(0));
 
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < col; j++) {
@@ -121,10 +138,18 @@ void Maze::startingAnimation() {
 	animation_elapsed += animation_speed;
 }
 
+void Maze::roofAnimation() {
+	for (auto& wall : walls) {
+		wall.roofMove();
+	}
+}
+
 void Maze::Render(const GLuint& shaderProgramID) {
 	for (auto& wall : walls) {
 		glm::mat4 model = wall.getModelMatrix();
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), wall.getRoofMoveAmount());
 		wall.Render();
 	}
 }

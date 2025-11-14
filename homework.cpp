@@ -45,7 +45,7 @@ glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
 glm::vec3 viewPos = EYE_freecam;
 float shininess = 32.0f;
 
-bool perspectiveOn = true;
+bool perspectiveOn = true, cam_far = true, cam_FPS = false, cam_TPS = false;
 bool keydown_W = false, keydown_S = false, keydown_A = false, keydown_D = false;
 
 void main(int argc, char** argv)
@@ -115,7 +115,16 @@ GLvoid drawScene()
 	if (perspectiveOn) projection = glm::perspective(glm::radians(55.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
 	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
 
-	glm::mat4 view = glm::lookAt(EYE_freecam, AT_freecam, UP_freecam);
+	glm::mat4 view;
+	if (cam_far) {
+		view = glm::lookAt(EYE_freecam, AT_freecam, UP_freecam);
+	}
+	if (cam_FPS) {
+		view = glm::lookAt(maze->getPlayerEyeFPS(), maze->getPlayerAtFPS(), UP_freecam);
+	}
+	if (cam_TPS) {
+		view = glm::lookAt(maze->getPlayerEyeTPS(), maze->getPlayerAtTPS(), UP_freecam);
+	}
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -185,12 +194,43 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 's':
 		// 토글
 		maze->togglePlayer();
+		if (!maze->isPlayerDisplayed()) {
+			cam_FPS = false;
+			cam_TPS = false;
+			cam_far = true;
+		}
 		break;
 	case '=':
 		maze->addRoofMoveSpeed(0.002f);
 		break;
 	case '-':
 		maze->addRoofMoveSpeed(-0.002f);
+		break;
+	case '1':
+		if (maze->isPlayerDisplayed()) {
+			if (cam_FPS) {
+				cam_FPS = false;
+				cam_far = true;
+			}
+			else {
+				cam_FPS = true;
+				cam_TPS = false;
+				cam_far = false;
+			}
+		}
+		break;
+	case '3':
+		if (maze->isPlayerDisplayed()) {
+			if (cam_TPS) {
+				cam_TPS = false;
+				cam_far = true;
+			}
+			else {
+				cam_TPS = true;
+				cam_FPS = false;
+				cam_far = false;
+			}
+		}
 		break;
 	case 'q':
 		exit(0);

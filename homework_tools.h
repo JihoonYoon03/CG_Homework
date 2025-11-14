@@ -22,7 +22,8 @@ private:
 	GLfloat roof_move_amount, roof_move_speed, roof_move_dir, roof_move_speed_offset = 0.0f, roof_move_cap_upper, roof_move_cap_lower;
 
 protected:
-	glm::vec3 vertices[24] =
+	// 원본 정점 데이터 (변경되지 않음)
+	const glm::vec3 original_vertices[24] =
 	{
 		// 앞면 (0-3): Z = +0.5
 		{ -0.5f, -0.5f,  0.5f }, {  0.5f, -0.5f,  0.5f },
@@ -48,6 +49,8 @@ protected:
 		{  0.5f, -0.5f, -0.5f }, { -0.5f, -0.5f, -0.5f },
 		{ -0.5f,  0.5f, -0.5f }, {  0.5f,  0.5f, -0.5f }
 	};
+
+	glm::vec3 vertices[24];
 
 	glm::vec3 normals[24] =
 	{
@@ -123,18 +126,23 @@ protected:
 
 	glm::vec3 center;
 
+	// 초기 변환 (생성자에서 설정, 이후 변경되지 않음)
+	glm::mat4 initial_scale = glm::mat4(1.0f);
+	glm::mat4 initial_rotate = glm::mat4(1.0f);
+	glm::mat4 initial_translate = glm::mat4(1.0f);
 
+public:
+	// 추가 변환 (runtime에 변경 가능) - Maze에서 접근할 수 있도록 public
 	glm::mat4 scale = glm::mat4(1.0f);
 	glm::mat4 rotate = glm::mat4(1.0f);
 	glm::mat4 translate = glm::mat4(1.0f);
 
-public:
 	Cube(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
 
 	void scaling(glm::vec3 amount);
 	void rotating(glm::vec3 amount);
 	void translating(glm::vec3 amount);
-	glm::mat4 getModelMatrix();
+	glm::mat4 getModelMatrix() const;
 
 	void roofMove();
 	void setRoofHeight(GLfloat height);
@@ -155,6 +163,11 @@ public:
 	void addMoveDeltaX(GLfloat delta) { move_delta_x += delta; }
 	void addMoveDeltaZ(GLfloat delta) { move_delta_z += delta; }
 	void move();
+
+	glm::vec3 getEyeFPS() const;
+	glm::vec3 getAtFPS() const;
+	glm::vec3 getEyeTPS() const;
+	glm::vec3 getAtTPS() const;
 };
 
 class Maze {
@@ -187,6 +200,10 @@ public:
 
 	void togglePlayer() { display_player = !display_player; }
 	bool isPlayerDisplayed() const { return display_player; }
+	glm::vec3 getPlayerEyeFPS() const { return player->getEyeFPS(); }
+	glm::vec3 getPlayerAtFPS() const { return player->getAtFPS(); }
+	glm::vec3 getPlayerEyeTPS() const { return player->getEyeTPS(); }
+	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
 
 	void movePlayer() { player->move(); }
 

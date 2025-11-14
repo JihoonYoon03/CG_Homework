@@ -60,7 +60,21 @@ void main(int argc, char** argv)
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.0f);
-	maze = new Maze(15, 15);
+
+	bool generating = true;
+	while (generating) {
+		int row, col;
+		std::cout << "가로와 세로로 나눌 횟수를 입력해주세요. (q: 프로그램 종료)\n나누기 제한 : 5 ~ 25\n입력: ";
+		std::cin >> col >> row;
+		if (std::cin.fail() || row < 5 || row > 25 || col < 5 || col > 25) {
+			std::cout << "잘못된 입력입니다.\n";
+			std::cin.clear();
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			continue;
+		}
+		maze = new Maze(row, col);
+		generating = false;
+	}
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);

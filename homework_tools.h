@@ -135,6 +135,7 @@ public:
 
 	void move(glm::vec3 amount);
 	void roofMove();
+	void setRoofHeight(GLfloat height);
 
 	void Render();
 	glm::vec3 getCenter() const { return center; }
@@ -150,6 +151,8 @@ class Maze {
 
 	bool isAnimating = true;
 	bool roof_moving = false;
+	bool display_player = false;
+
 	GLfloat animation_elapsed = 0.0f;
 	GLfloat animation_speed = 0.01f;
 public:
@@ -157,6 +160,9 @@ public:
 	void startingAnimation();
 	void roofAnimation();
 	void setRoofMoving(bool move) { roof_moving = move; }
+	void setRoofHeight(GLfloat height);
+	void displayPlayer(bool display) { display_player = display; }
+
 	void Render(const GLuint& shaderProgramID);
 	bool animating() const { return isAnimating; }
 	bool roofMoving() const { return roof_moving; }

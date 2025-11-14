@@ -150,6 +150,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		else
 			camera_rot_dir = 0.0f;
 		break;
+	case 'r':
+		break;
+	case 'v':
+		maze->setRoofHeight(-0.4f);
+		maze->displayPlayer(true);
+		break;
 	case 'q':
 		exit(0);
 		break;

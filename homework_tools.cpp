@@ -86,6 +86,10 @@ void Cube::roofMove() {
 	roof_move_amount = temp;
 }
 
+void Cube::setRoofHeight(GLfloat height) {
+	roof_move_amount = height;
+}
+
 void Cube::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -141,6 +145,13 @@ void Maze::startingAnimation() {
 void Maze::roofAnimation() {
 	for (auto& wall : walls) {
 		wall.roofMove();
+	}
+}
+
+void Maze::setRoofHeight(GLfloat height) {
+	roof_moving = false;
+	for (auto& wall : walls) {
+		wall.setRoofHeight(height);
 	}
 }
 

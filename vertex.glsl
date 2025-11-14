@@ -6,7 +6,6 @@ layout (location = 2) in vec3 vNormal;
 
 uniform mat4 projection = mat4(1.0);
 uniform mat4 view = mat4(1.0);
-uniform mat4 world = mat4(1.0);
 uniform mat4 model = mat4(1.0);
 
 uniform float roofYOffset = 0.0;
@@ -23,8 +22,8 @@ void main()
 		pos.y += roofYOffset;
 	}
 
-	gl_Position = projection * view * world * model * vec4(pos, 1.0);
-	FragPos = vec3(world * model * vec4(pos, 1.0));
-	Normal = normalize(mat3(world * model) * vNormal);
+	gl_Position = projection * view * model * vec4(pos, 1.0);
+	FragPos = vec3(model * vec4(pos, 1.0));
+	Normal = normalize(mat3(model) * vNormal);
 	color = vColor;
 } 

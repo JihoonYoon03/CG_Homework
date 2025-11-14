@@ -1,33 +1,48 @@
 #include "homework_tools.h"
 
-Cube::Cube() {
-	/*for (int i = 0; i < sizeof(vertices) / sizeof(ColoredVertex); i++) {
-		vertices[i].pos *= offset;
-	}*/
+Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location) {
+	glm::mat4 transform = glm::mat4(1.0f);
+	transform = glm::scale(transform, scaling);
+	transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+	transform = glm::translate(transform, location);
+	
+	for (int i = 0; i < 24; i++) {
+		glm::vec4 transformedVertex = transform * glm::vec4(vertices[i], 1.0f);
+		vertices[i] = glm::vec3(transformedVertex);
+	}
 
 	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
+	glGenBuffers(1, &VERTEX);
+	glGenBuffers(1, &FACE);
+	glGenBuffers(1, &COLOR);
+	glGenBuffers(1, &NORMAL);
 
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VERTEX);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (GLvoid*)sizeof(glm::vec3));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, FACE);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER, COLOR);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, NORMAL);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
 }
 
 void Cube::Render() {
 	glBindVertexArray(VAO);
-	for (int i = 0; i < 6; i++) {
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(i * 6 * sizeof(GLuint)));
-	}
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

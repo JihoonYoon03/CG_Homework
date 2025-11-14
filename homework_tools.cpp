@@ -8,20 +8,16 @@ Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 
 	transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 	transform = glm::scale(transform, scaling);
 	
-	GLfloat upper = 0, lower = 100.0f * scaling.y;
 	for (int i = 0; i < 24; i++) {
 		glm::vec4 transformedVertex = transform * glm::vec4(vertices[i], 1.0f);
 		vertices[i] = glm::vec3(transformedVertex);
-
-		if (vertices[i].y > upper) upper = vertices[i].y;
-		if (vertices[i].y < lower) lower = vertices[i].y;
-
 		colors[i] = color;
 	}
 
-	roof_move_cap_upper = upper + static_cast<GLfloat>(rand()) / RAND_MAX * 1.4f;
-	roof_move_cap_lower = static_cast<GLfloat>(rand()) / RAND_MAX * (lower / 2) + 0.05f;
+	roof_move_cap_upper = static_cast<GLfloat>(rand()) / RAND_MAX * 1.4f + 1.0f;
+	roof_move_cap_lower = static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f * scaling.y - 1.0f * scaling.y;
 	roof_move_speed = static_cast<GLfloat>(rand()) / RAND_MAX * 0.05f + 0.005f;
+	roof_move_dir = 1.0f;
 	roof_move_amount = 0.0f;
 
 	glGenVertexArrays(1, &VAO);
@@ -71,16 +67,27 @@ glm::mat4 Cube::getModelMatrix() {
 }
 
 void Cube::roofMove() {
-	GLfloat temp = roof_move_amount + roof_move_speed;
+	GLfloat temp = roof_move_amount + (roof_move_speed + roof_move_speed_offset) * roof_move_dir;
 	if (temp >= roof_move_cap_upper || temp <= roof_move_cap_lower) {
 		temp = temp >= roof_move_cap_upper ? roof_move_cap_upper : roof_move_cap_lower;
-		roof_move_speed = -roof_move_speed;
+		roof_move_dir = -roof_move_dir;
 	}
 	roof_move_amount = temp;
 }
 
 void Cube::setRoofHeight(GLfloat height) {
 	roof_move_amount = height;
+}
+
+void Cube::addRoofMoveSpeed(GLfloat speed) {
+	roof_move_speed_offset += speed;
+	if (roof_move_speed + roof_move_speed_offset < 0.001f) {
+		roof_move_speed_offset = 0.001f - roof_move_speed;
+	}
+
+	if (roof_move_speed + roof_move_speed_offset > 0.5f) {
+		roof_move_speed_offset = 0.5f - roof_move_speed;
+	}
 }
 
 void Cube::Render() {
@@ -173,6 +180,12 @@ void Maze::setRoofHeight(GLfloat height) {
 	roof_moving = false;
 	for (auto& wall : walls) {
 		wall.setRoofHeight(height);
+	}
+}
+
+void Maze::addRoofMoveSpeed(GLfloat speed) {
+	for (auto& wall : walls) {
+		wall.addRoofMoveSpeed(speed);
 	}
 }
 

@@ -19,7 +19,7 @@ struct ColoredVertex {
 
 class Cube {
 private:
-	GLfloat roof_move_amount, roof_move_speed, roof_move_cap_upper, roof_move_cap_lower;
+	GLfloat roof_move_amount, roof_move_speed, roof_move_dir, roof_move_speed_offset = 0.0f, roof_move_cap_upper, roof_move_cap_lower;
 
 protected:
 	glm::vec3 vertices[24] =
@@ -138,6 +138,7 @@ public:
 
 	void roofMove();
 	void setRoofHeight(GLfloat height);
+	void addRoofMoveSpeed(GLfloat speed);
 
 	void Render();
 	glm::vec3 getCenter() const { return center; }
@@ -182,6 +183,7 @@ public:
 	bool roofMoving() const { return roof_moving; }
 	void setRoofMoving(bool move) { roof_moving = move; }
 	void setRoofHeight(GLfloat height);
+	void addRoofMoveSpeed(GLfloat speed);
 
 	void togglePlayer() { display_player = !display_player; }
 	bool isPlayerDisplayed() const { return display_player; }

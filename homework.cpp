@@ -186,6 +186,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		// 토글
 		maze->togglePlayer();
 		break;
+	case '=':
+		maze->addRoofMoveSpeed(0.002f);
+		break;
+	case '-':
+		maze->addRoofMoveSpeed(-0.002f);
+		break;
 	case 'q':
 		exit(0);
 		break;

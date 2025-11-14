@@ -17,17 +17,14 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-GLvoid MouseMotion(int x, int y);
 GLvoid TimerFunc(int value);
 
-GLint winWidth = 600, winHeight = 600;
+GLint winWidth = 1280, winHeight = 720;
 GLuint shaderProgramID;
 GLuint vertexShader;
 GLuint fragmentShader;
 
 glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
-GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
-
 
 Maze* maze;
 DisplayBasis* XYZ;
@@ -35,7 +32,7 @@ DisplayBasis* XYZ;
 glm::vec3 EYE{ 0.0f, 3.0f, 5.0f };
 glm::vec3 AT{ 0.0f, 1.0f, 0.0f };
 glm::vec3 UP{ 0.0f, 1.0f, 0.0f };
-GLfloat cameraSpeed = 0.1f, camera_mov_dir = 0.0f;
+GLfloat camera_speed = 0.1f, camera_y_angle = 0.0f, camera_mov_dir = 0.0f, camera_rot_dir = 0.0f;
 
 glm::vec3 lightPos{ 1.0f, 1.0f, 1.0f };
 glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
@@ -85,7 +82,6 @@ void main(int argc, char** argv)
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutPassiveMotionFunc(MouseMotion);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 	delete maze;
@@ -107,13 +103,9 @@ GLvoid drawScene()
 	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
 
 	glm::mat4 view = glm::lookAt(EYE, AT, UP);
-	
-	glm::mat4 world = glm::rotate(glm::mat4(1.0f), glm::radians(-m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
-	world = glm::rotate(world, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
 	XYZ->Render();
 	maze->Render(shaderProgramID);
@@ -125,18 +117,6 @@ GLvoid Reshape(int w, int h)
 	glViewport(0, 0, w, h);
 	winWidth = w;
 	winHeight = h;
-}
-
-GLvoid MouseMotion(int x, int y)
-{
-	m_rotationX += (x - winWidth / 2) * 0.2f;
-	m_rotationY += (y - winHeight / 2) * 0.2f;
-
-	if (m_rotationY > 89.0f) m_rotationY = 89.0f;
-	if (m_rotationY < -89.0f) m_rotationY = -89.0f;
-
-	glutWarpPointer(winWidth / 2, winHeight / 2);
-	glutPostRedisplay();
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y)
@@ -151,9 +131,15 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'z': case 'Z':
 		if (perspectiveOn) {
 			camera_mov_dir = key == 'z' ? -1.0f : 1.0f;
-			EYE += cameraSpeed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
-			AT += cameraSpeed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			EYE += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			AT += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
 		}
+		break;
+	case 'y': case 'Y':
+		if (camera_rot_dir == 0.0f)
+			camera_rot_dir = key == 'y' ? -1.0f : 1.0f;
+		else
+			camera_rot_dir = 0.0f;
 		break;
 	case 'q':
 		exit(0);
@@ -165,6 +151,10 @@ GLvoid TimerFunc(int value)
 {
 	if (maze->animating()) {
 		maze->startingAnimation();
+	}
+	if (camera_rot_dir) {
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(camera_rot_dir), glm::vec3(0.0f, 1.0f, 0.0f));
+		EYE = glm::vec3(rotation * glm::vec4(EYE, 1.0f));
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / 60, TimerFunc, 1);

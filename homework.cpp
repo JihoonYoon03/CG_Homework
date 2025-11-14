@@ -28,11 +28,11 @@ glm::vec3 bgColor = { 0.1f, 0.1f, 0.1f };
 GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 
 
-Cube* cube;
+Maze* maze;
 DisplayBasis* XYZ;
 
-glm::vec3 EYE{ 0.0f, 0.0f, 2.0f };
-glm::vec3 AT{ 0.0f, 0.0f, 0.0f };
+glm::vec3 EYE{ 0.0f, 1.0f, 5.0f };
+glm::vec3 AT{ 0.0f, 1.0f, 0.0f };
 glm::vec3 UP{ 0.0f, 1.0f, 0.0f };
 
 glm::vec3 lightPos{ 1.0f, 1.0f, 1.0f };
@@ -60,14 +60,14 @@ void main(int argc, char** argv)
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.0f);
-	cube = new Cube();
+	maze = new Maze(15, 15);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
 	glutPassiveMotionFunc(MouseMotion);
 	glutMainLoop();
-	delete cube;
+	delete maze;
 }
 
 GLvoid drawScene()
@@ -92,7 +92,7 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	XYZ->Render();
-	cube->Render();
+	maze->Render();
 	glutSwapBuffers();
 }
 

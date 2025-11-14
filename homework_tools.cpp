@@ -1,16 +1,17 @@
 #include "homework_tools.h"
 
-Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location) {
+Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) {
 	glm::mat4 transform = glm::mat4(1.0f);
-	transform = glm::scale(transform, scaling);
+	transform = glm::translate(transform, location);
 	transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-	transform = glm::translate(transform, location);
+	transform = glm::scale(transform, scaling);
 	
 	for (int i = 0; i < 24; i++) {
 		glm::vec4 transformedVertex = transform * glm::vec4(vertices[i], 1.0f);
 		vertices[i] = glm::vec3(transformedVertex);
+		colors[i] = color;
 	}
 
 	glGenVertexArrays(1, &VAO);
@@ -43,6 +44,34 @@ Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location) {
 void Cube::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+}
+
+Maze::Maze(int row, int col) : row(row), col(col) {
+	GLfloat widthPerCol = width / col;
+	GLfloat lengthPerRow = length / row;
+
+	srand((unsigned int)time(0));
+
+	for (int i = 0; i < row; i++) {
+		for (int j = 0; j < col; j++) {
+			walls.push_back(Cube(
+				glm::vec3(widthPerCol, 1.0f, lengthPerRow),
+				glm::vec3(0.0f, 0.0f, 0.0f),
+				glm::vec3(	-width / 2.0f + widthPerCol / 2 + widthPerCol * j,
+							0.5f,
+							-length / 2.0f + lengthPerRow / 2 + lengthPerRow * i),
+				glm::vec3(static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f,
+					static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f,
+					static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f)
+			));
+		}
+	}
+}
+
+void Maze::Render() {
+	for (auto& wall : walls) {
+		wall.Render();
+	}
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

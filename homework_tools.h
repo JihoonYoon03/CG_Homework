@@ -118,11 +118,18 @@ class Cube {
 	GLuint VAO, VERTEX, FACE, COLOR, NORMAL;
 
 public:
-	Cube(glm::vec3 scaling = {1.0f, 1.0f, 1.0f}, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f });
+	Cube(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
 	void Render();
 };
 
-class DisplayBasis;
+class Maze {
+	int row, col;
+	GLfloat width = 2.0f, length = 2.0f;
+	std::vector<Cube> walls;
+public:
+	Maze(int row, int col);
+	void Render();
+};
 
 class DisplayBasis {
 	glm::vec3 origin;

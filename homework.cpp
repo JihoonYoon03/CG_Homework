@@ -32,9 +32,10 @@ GLfloat m_rotationX = 0.0f, m_rotationY = 0.0f;
 Maze* maze;
 DisplayBasis* XYZ;
 
-glm::vec3 EYE{ 0.0f, 1.0f, 5.0f };
+glm::vec3 EYE{ 0.0f, 3.0f, 5.0f };
 glm::vec3 AT{ 0.0f, 1.0f, 0.0f };
 glm::vec3 UP{ 0.0f, 1.0f, 0.0f };
+GLfloat cameraSpeed = 0.1f, camera_mov_dir = 0.0f;
 
 glm::vec3 lightPos{ 1.0f, 1.0f, 1.0f };
 glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
@@ -146,6 +147,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 'p':
 		perspectiveOn = true;
+		break;
+	case 'z': case 'Z':
+		if (perspectiveOn) {
+			camera_mov_dir = key == 'z' ? -1.0f : 1.0f;
+			EYE += cameraSpeed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			AT += cameraSpeed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+		}
 		break;
 	case 'q':
 		exit(0);

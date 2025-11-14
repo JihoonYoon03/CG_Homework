@@ -146,12 +146,13 @@ public:
 
 class Player : public Cube {
 	GLfloat move_delta_x = 0.0f, move_delta_z = 0.0f;
+	GLfloat move_amount_x = 0.0f, move_amount_z = 0.0f;
 
 public:
 	Player(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
 
-	void setMoveDeltaX(GLfloat delta) { move_delta_x = delta; }
-	void setMoveDeltaZ(GLfloat delta) { move_delta_z = delta; }
+	void addMoveDeltaX(GLfloat delta) { move_delta_x += delta; }
+	void addMoveDeltaZ(GLfloat delta) { move_delta_z += delta; }
 	void move();
 };
 
@@ -159,6 +160,7 @@ class Maze {
 	int row, col;
 	GLfloat width = 2.0f, length = 2.0f;
 	Player* player;
+	GLfloat player_speed = 0.002f;
 	Cube* ground;
 	std::vector<Cube> walls;
 	std::vector<glm::vec3> animation_start;
@@ -174,14 +176,29 @@ class Maze {
 public:
 	Maze(int row, int col);
 	void startingAnimation();
+	bool animating() const { return isAnimating; }
+
 	void roofAnimation();
+	bool roofMoving() const { return roof_moving; }
 	void setRoofMoving(bool move) { roof_moving = move; }
 	void setRoofHeight(GLfloat height);
-	void displayPlayer() { display_player = !display_player; }
+
+	void togglePlayer() { display_player = !display_player; }
+	bool isPlayerDisplayed() const { return display_player; }
+
+	void movePlayer() { player->move(); }
+
+	void keyUpPressed() { player->addMoveDeltaZ(-player_speed); }
+	void keyDownPressed() { player->addMoveDeltaZ(player_speed); }
+	void keyLeftPressed() { player->addMoveDeltaX(-player_speed); }
+	void keyRightPressed() { player->addMoveDeltaX(player_speed); }
+
+	void keyUpReleased() { player->addMoveDeltaZ(player_speed); }
+	void keyDownReleased() { player->addMoveDeltaZ(-player_speed); }
+	void keyLeftReleased() { player->addMoveDeltaX(player_speed); }
+	void keyRightReleased() { player->addMoveDeltaX(-player_speed); }
 
 	void Render(const GLuint& shaderProgramID);
-	bool animating() const { return isAnimating; }
-	bool roofMoving() const { return roof_moving; }
 
 	~Maze() {
 		delete player;

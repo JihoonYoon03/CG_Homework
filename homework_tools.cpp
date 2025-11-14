@@ -91,9 +91,11 @@ void Cube::Render() {
 Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : Cube(scaling, rotation, location, color) {}
 
 void Player::move() {
-	for (int i = 0; i < 24; i++) {
-		vertices[i] += glm::vec3(move_delta_x, 0.0f, move_delta_z);
-	}
+	if (move_delta_x == 0.0f && move_delta_z == 0.0f) return;
+
+	move_amount_x += move_delta_x;
+	move_amount_z += move_delta_z;
+	this->translating(glm::vec3(move_amount_x, 0.0f, move_amount_z));
 	center += glm::vec3(move_delta_x, 0.0f, move_delta_z);
 }
 
@@ -177,6 +179,7 @@ void Maze::setRoofHeight(GLfloat height) {
 void Maze::Render(const GLuint& shaderProgramID) {
 	ground->Render();
 	if (display_player) {
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(player->getModelMatrix()));
 		player->Render();
 	}
 	for (auto& wall : walls) {

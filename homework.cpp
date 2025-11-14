@@ -17,6 +17,8 @@
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
+GLvoid KeySpecial(int key, int x, int y);
+GLvoid KeySpecialUp(int key, int x, int y);
 GLvoid TimerFunc(int value);
 
 GLint winWidth = 1280, winHeight = 720;
@@ -34,7 +36,7 @@ glm::vec3 AT_freecam{ 0.0f, 1.0f, 0.0f };
 glm::vec3 UP_freecam{ 0.0f, 1.0f, 0.0f };
 GLfloat camera_speed = 0.1f, camera_y_angle = 0.0f, camera_mov_dir = 0.0f, camera_rot_dir = 0.0f;
 
-glm::vec3 EYE_minimap{ 0.0f, 6.0f, 0.01f };
+glm::vec3 EYE_minimap{ 0.0f, 6.0f, 0.0001f };
 glm::vec3 AT_minimap{ 0.0f, 0.0f, 0.0f };
 glm::vec3 UP_minimap{ 0.0f, 1.0f, 0.0f };
 
@@ -44,6 +46,7 @@ glm::vec3 viewPos = EYE_freecam;
 float shininess = 32.0f;
 
 bool perspectiveOn = true;
+bool keydown_W = false, keydown_S = false, keydown_A = false, keydown_D = false;
 
 void main(int argc, char** argv)
 {
@@ -88,6 +91,8 @@ void main(int argc, char** argv)
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	glutSpecialFunc(KeySpecial);
+	glutSpecialUpFunc(KeySpecialUp);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 	delete maze;
@@ -179,10 +184,62 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 's':
 		// 토글
-		maze->displayPlayer();
+		maze->togglePlayer();
 		break;
 	case 'q':
 		exit(0);
+		break;
+	}
+}
+
+GLvoid KeySpecial(int key, int x, int y)
+{
+	switch (key) {
+	case GLUT_KEY_UP:
+		if (keydown_W == false) {
+			keydown_W = true;
+			maze->keyUpPressed();
+		}
+		break;
+	case GLUT_KEY_DOWN:
+		if (keydown_S == false) {
+			keydown_S = true;
+			maze->keyDownPressed();
+		}
+		break;
+	case GLUT_KEY_LEFT:
+		if (keydown_A == false) {
+			keydown_A = true;
+			maze->keyLeftPressed();
+		}
+		break;
+	case GLUT_KEY_RIGHT:
+		if (keydown_D == false) {
+			keydown_D = true;
+			maze->keyRightPressed();
+		}
+		break;
+	}
+}
+
+GLvoid KeySpecialUp(int key, int x, int y)
+{
+	switch (key) {
+	case GLUT_KEY_UP:
+		maze->keyUpReleased();
+		keydown_W = false;
+		break;
+	case GLUT_KEY_DOWN:
+		maze->keyDownReleased();
+		keydown_S = false;
+		break;
+	case GLUT_KEY_LEFT:
+		maze->keyLeftReleased();
+		keydown_A = false;
+		break;
+	case GLUT_KEY_RIGHT:
+		maze->keyRightReleased();
+		keydown_D = false;
 		break;
 	}
 }
@@ -194,6 +251,9 @@ GLvoid TimerFunc(int value)
 	}
 	else if (maze->roofMoving()) {
 		maze->roofAnimation();
+	}
+	if (maze->isPlayerDisplayed()) {
+		maze->movePlayer();
 	}
 	if (camera_rot_dir) {
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(camera_rot_dir), glm::vec3(0.0f, 1.0f, 0.0f));

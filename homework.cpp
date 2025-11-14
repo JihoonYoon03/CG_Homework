@@ -41,6 +41,7 @@ glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
 glm::vec3 viewPos = EYE;
 float shininess = 32.0f;
 
+bool perspectiveOn = true;
 
 void main(int argc, char** argv)
 {
@@ -58,6 +59,9 @@ void main(int argc, char** argv)
 	shaderProgramID = make_shaderProgram(vertexShader, fragmentShader);
 
 	glEnable(GL_DEPTH_TEST);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
 
 	// 데이터 초기화
 	XYZ = new DisplayBasis(1.0f);
@@ -97,7 +101,10 @@ GLvoid drawScene()
 	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), shininess);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
 
-	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
+	glm::mat4 projection;
+	if (perspectiveOn) projection = glm::perspective(glm::radians(55.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
+	else projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 0.1f, 100.0f);
+
 	glm::mat4 view = glm::lookAt(EYE, AT, UP);
 	
 	glm::mat4 world = glm::rotate(glm::mat4(1.0f), glm::radians(-m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -134,6 +141,12 @@ GLvoid MouseMotion(int x, int y)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
+	case 'o':
+		perspectiveOn = false;
+		break;
+	case 'p':
+		perspectiveOn = true;
+		break;
 	case 'q':
 		exit(0);
 		break;

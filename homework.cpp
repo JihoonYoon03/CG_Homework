@@ -18,6 +18,7 @@ GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid MouseMotion(int x, int y);
+GLvoid TimerFunc(int value);
 
 GLint winWidth = 600, winHeight = 600;
 GLuint shaderProgramID;
@@ -64,7 +65,7 @@ void main(int argc, char** argv)
 	bool generating = true;
 	while (generating) {
 		int row, col;
-		std::cout << "가로와 세로로 나눌 횟수를 입력해주세요. (q: 프로그램 종료)\n나누기 제한 : 5 ~ 25\n입력: ";
+		std::cout << "가로와 세로로 나눌 횟수를 입력해주세요.\n나누기 제한 : 5 ~ 25\n입력: ";
 		std::cin >> col >> row;
 		if (std::cin.fail() || row < 5 || row > 25 || col < 5 || col > 25) {
 			std::cout << "잘못된 입력입니다.\n";
@@ -80,6 +81,7 @@ void main(int argc, char** argv)
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
 	glutPassiveMotionFunc(MouseMotion);
+	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 	delete maze;
 }
@@ -98,15 +100,15 @@ GLvoid drawScene()
 	glm::mat4 projection = glm::perspective(glm::radians(55.0f), static_cast<GLfloat>(winWidth) / winHeight, 0.1f, 100.0f);
 	glm::mat4 view = glm::lookAt(EYE, AT, UP);
 	
-	glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(-m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
-	model = glm::rotate(model, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 world = glm::rotate(glm::mat4(1.0f), glm::radians(-m_rotationX), glm::vec3(0.0f, 1.0f, 0.0f));
+	world = glm::rotate(world, glm::radians(-m_rotationY), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "world"), 1, GL_FALSE, glm::value_ptr(world));
 
 	XYZ->Render();
-	maze->Render();
+	maze->Render(shaderProgramID);
 	glutSwapBuffers();
 }
 
@@ -136,4 +138,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		exit(0);
 		break;
 	}
+}
+
+GLvoid TimerFunc(int value)
+{
+	if (maze->animating()) {
+		maze->startingAnimation();
+	}
+	glutPostRedisplay();
+	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }

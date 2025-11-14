@@ -1,6 +1,6 @@
 #include "homework_tools.h"
 
-Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) {
+Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : center(location) {
 	glm::mat4 transform = glm::mat4(1.0f);
 	transform = glm::translate(transform, location);
 	transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -41,6 +41,32 @@ Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 
 	glEnableVertexAttribArray(2);
 }
 
+void Cube::scaling(glm::vec3 amount) {
+	scale = glm::scale(glm::mat4(1.0f), amount);
+}
+
+void Cube::rotating(glm::vec3 amount) {
+	rotate = glm::rotate(glm::mat4(1.0f), glm::radians(amount.x), glm::vec3(1.0f, 0.0f, 0.0f));
+	rotate = glm::rotate(glm::mat4(1.0f), glm::radians(amount.y), glm::vec3(0.0f, 1.0f, 0.0f));
+	rotate = glm::rotate(glm::mat4(1.0f), glm::radians(amount.z), glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
+void Cube::translating(glm::vec3 amount) {
+	translate = glm::translate(glm::mat4(1.0f), amount);
+}
+
+glm::mat4 Cube::getModelMatrix() {
+	return translate * rotate * scale;
+}
+
+void Cube::move(glm::vec3 amount) {
+	for (int i = 0; i < 24; i++) {
+		vertices[i] += amount;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, VERTEX);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+}
+
 void Cube::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -54,22 +80,51 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < col; j++) {
-			walls.push_back(Cube(
-				glm::vec3(widthPerCol, 1.0f, lengthPerRow),
-				glm::vec3(0.0f, 0.0f, 0.0f),
-				glm::vec3(	-width / 2.0f + widthPerCol / 2 + widthPerCol * j,
-							0.5f,
-							-length / 2.0f + lengthPerRow / 2 + lengthPerRow * i),
-				glm::vec3(static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f,
-					static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f,
-					static_cast<GLfloat>(rand()) / RAND_MAX * 0.5f + 0.5f)
-			));
+			glm::vec3 xyz{
+				-width / 2.0f + widthPerCol / 2 + widthPerCol * j,
+				0.5f,
+				-length / 2.0f + lengthPerRow / 2 + lengthPerRow * i
+			};
+
+			glm::vec3 color {
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f
+			};
+
+			// 메이즈 생성 애니메이션 시작
+			animation_start.push_back(xyz + color * 4.0f);
+
+			// 메이즈 생성 애니메이션 목표
+			animation_goal.push_back(xyz);
+
+			// 큐브는 랜덤 위치에서 시작
+			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
+			walls.back().translating(color * 4.0f);
 		}
 	}
 }
 
-void Maze::Render() {
+void Maze::startingAnimation() {
+	for (size_t i = 0; i < walls.size(); i++) {
+		glm::vec3 distance = animation_goal[i] - animation_start[i];
+		glm::vec3 new_location;
+		if (animation_elapsed >= 1.0f) {
+			isAnimating = false;
+			new_location = { 0, 0, 0 };
+		}
+		else {
+			new_location = distance - distance * animation_elapsed;
+		}
+		walls[i].translating(new_location);
+	}
+	animation_elapsed += animation_speed;
+}
+
+void Maze::Render(const GLuint& shaderProgramID) {
 	for (auto& wall : walls) {
+		glm::mat4 model = wall.getModelMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		wall.Render();
 	}
 }

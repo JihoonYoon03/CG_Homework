@@ -98,6 +98,14 @@ void Cube::Render() {
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
+void Cube::reset() {
+	translate = glm::mat4(1.0f);
+	rotate = glm::mat4(1.0f);
+	scale = glm::mat4(1.0f);
+	roof_move_speed_offset = 0.0f;
+	roof_move_amount = 0.0f;
+}
+
 Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : Cube(scaling, rotation, location, color) {}
 
 void Player::move() {
@@ -111,27 +119,31 @@ void Player::move() {
 }
 
 glm::vec3 Player::getEyeFPS() const {
-	// 플레이어의 변환 행렬을 적용한 눈 위치 (플레이어 중심에서 약간 위)
-	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 0.305f, 0.0f, 1.0f);
+	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 0.55f, 0.0f, 1.0f);
 	return glm::vec3(eyePos);
 }
 
 glm::vec3 Player::getAtFPS() const {
-	// 1인칭 시점: 플레이어가 바라보는 방향 (앞쪽)
-	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.3f, -1.0f, 1.0f);
+	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.55f, -1.0f, 1.0f);
 	return glm::vec3(atPos);
 }
 
 glm::vec3 Player::getEyeTPS() const {
-	// 3인칭 시점: 플레이어 뒤쪽 위에서 바라봄
 	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 1.5f, 7.0f, 1.0f);
 	return glm::vec3(eyePos);
 }
 
 glm::vec3 Player::getAtTPS() const {
-	// 3인칭 시점: 플레이어 중심을 바라봄
 	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
 	return glm::vec3(atPos);
+}
+
+void Player::reset() {
+	Cube::reset();
+	move_amount_x = 0.0f;
+	move_amount_z = 0.0f;
+	move_delta_x = 0.0f;
+	move_delta_z = 0.0f;
 }
 
 Maze::Maze(int row, int col) : row(row), col(col) {
@@ -241,6 +253,18 @@ void Maze::Render(const GLuint& shaderProgramID) {
 		glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), wall.getRoofMoveAmount());
 		wall.Render();
 	}
+}
+
+void Maze::reset() {
+	player->reset();
+	for (auto& wall : walls) {
+		wall.reset();
+	}
+	animation_elapsed = 0.0f;
+	isAnimating = true;
+	roof_moving = false;
+	display_player = false;
+	animation_elapsed = 0.0f;
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

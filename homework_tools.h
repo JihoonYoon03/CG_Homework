@@ -151,6 +151,8 @@ public:
 	void Render();
 	glm::vec3 getCenter() const { return center; }
 	float getRoofMoveAmount() const { return roof_move_amount; }
+
+	virtual void reset();
 };
 
 class Player : public Cube {
@@ -168,6 +170,8 @@ public:
 	glm::vec3 getAtFPS() const;
 	glm::vec3 getEyeTPS() const;
 	glm::vec3 getAtTPS() const;
+
+	void reset() override;
 };
 
 class Maze {
@@ -218,6 +222,7 @@ public:
 	void keyRightReleased() { player->addMoveDeltaX(-player_speed); }
 
 	void Render(const GLuint& shaderProgramID);
+	void reset();
 
 	~Maze() {
 		delete player;

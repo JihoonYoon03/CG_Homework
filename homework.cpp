@@ -232,6 +232,17 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			}
 		}
 		break;
+	case 'c':
+		EYE_freecam = { 0.0f, 3.0f, 5.0f };
+		AT_freecam = { 0.0f, 1.0f, 0.0f };
+		camera_speed = 0.1f, camera_y_angle = 0.0f, camera_mov_dir = 0.0f, camera_rot_dir = 0.0f;
+
+		glm::vec3 viewPos = EYE_freecam;
+
+		perspectiveOn = true, cam_far = true, cam_FPS = false, cam_TPS = false;
+		keydown_W = false, keydown_S = false, keydown_A = false, keydown_D = false;
+		maze->reset();
+		break;
 	case 'q':
 		exit(0);
 		break;

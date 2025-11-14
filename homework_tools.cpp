@@ -63,18 +63,11 @@ void Cube::rotating(glm::vec3 amount) {
 
 void Cube::translating(glm::vec3 amount) {
 	translate = glm::translate(glm::mat4(1.0f), amount);
+	center += amount;
 }
 
 glm::mat4 Cube::getModelMatrix() {
 	return translate * rotate * scale;
-}
-
-void Cube::move(glm::vec3 amount) {
-	for (int i = 0; i < 24; i++) {
-		vertices[i] += amount;
-	}
-	glBindBuffer(GL_ARRAY_BUFFER, VERTEX);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
 void Cube::roofMove() {
@@ -95,9 +88,25 @@ void Cube::Render() {
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
+Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : Cube(scaling, rotation, location, color) {}
+
+void Player::move() {
+	for (int i = 0; i < 24; i++) {
+		vertices[i] += glm::vec3(move_delta_x, 0.0f, move_delta_z);
+	}
+	center += glm::vec3(move_delta_x, 0.0f, move_delta_z);
+}
+
 Maze::Maze(int row, int col) : row(row), col(col) {
 	GLfloat widthPerCol = width / col;
 	GLfloat lengthPerRow = length / row;
+
+	ground = new Cube(glm::vec3(width, 0.0001f, length), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.3f));
+
+	srand(static_cast<unsigned int>(time(0)));
+	GLint start_row = row - 1, start_col, end_row = 0, end_col;
+	start_col = rand() % (col - 2) + 1;
+	end_col = rand() % (col - 2) + 1;
 
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < col; j++) {
@@ -106,6 +115,16 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				0.5f,
 				-length / 2.0f + lengthPerRow / 2 + lengthPerRow * i
 			};
+
+			if (i == start_row && j == start_col) {
+				GLfloat scaleX = widthPerCol * 0.2f;
+				GLfloat scaleZ = lengthPerRow * 0.2f;
+				player_start_pos = glm::vec3(xyz.x, scaleX + scaleZ, xyz.z);
+				player = new Player(glm::vec3(scaleX, scaleX + scaleZ, scaleZ), glm::vec3(0.0f, 0.0f, 0.0f), player_start_pos, glm::vec3(1.0f, 1.0f, 0.0f));
+			}
+			if (i == end_row && j == end_col) {
+				maze_end_pos = xyz;
+			}
 
 			glm::vec3 color {
 				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
@@ -156,6 +175,10 @@ void Maze::setRoofHeight(GLfloat height) {
 }
 
 void Maze::Render(const GLuint& shaderProgramID) {
+	ground->Render();
+	if (display_player) {
+		player->Render();
+	}
 	for (auto& wall : walls) {
 		glm::mat4 model = wall.getModelMatrix();
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(model));

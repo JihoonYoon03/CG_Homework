@@ -18,6 +18,10 @@ struct ColoredVertex {
 };
 
 class Cube {
+private:
+	GLfloat roof_move_amount, roof_move_speed, roof_move_cap_upper, roof_move_cap_lower;
+
+protected:
 	glm::vec3 vertices[24] =
 	{
 		// 앞면 (0-3): Z = +0.5
@@ -119,7 +123,6 @@ class Cube {
 
 	glm::vec3 center;
 
-	GLfloat roof_move_amount, roof_move_speed, roof_move_cap_upper, roof_move_cap_lower;
 
 	glm::mat4 scale = glm::mat4(1.0f);
 	glm::mat4 rotate = glm::mat4(1.0f);
@@ -133,7 +136,6 @@ public:
 	void translating(glm::vec3 amount);
 	glm::mat4 getModelMatrix();
 
-	void move(glm::vec3 amount);
 	void roofMove();
 	void setRoofHeight(GLfloat height);
 
@@ -142,12 +144,26 @@ public:
 	float getRoofMoveAmount() const { return roof_move_amount; }
 };
 
+class Player : public Cube {
+	GLfloat move_delta_x = 0.0f, move_delta_z = 0.0f;
+
+public:
+	Player(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
+
+	void setMoveDeltaX(GLfloat delta) { move_delta_x = delta; }
+	void setMoveDeltaZ(GLfloat delta) { move_delta_z = delta; }
+	void move();
+};
+
 class Maze {
 	int row, col;
 	GLfloat width = 2.0f, length = 2.0f;
+	Player* player;
+	Cube* ground;
 	std::vector<Cube> walls;
 	std::vector<glm::vec3> animation_start;
 	std::vector<glm::vec3> animation_goal;
+	glm::vec3 player_start_pos, maze_end_pos;
 
 	bool isAnimating = true;
 	bool roof_moving = false;
@@ -161,11 +177,16 @@ public:
 	void roofAnimation();
 	void setRoofMoving(bool move) { roof_moving = move; }
 	void setRoofHeight(GLfloat height);
-	void displayPlayer(bool display) { display_player = display; }
+	void displayPlayer() { display_player = !display_player; }
 
 	void Render(const GLuint& shaderProgramID);
 	bool animating() const { return isAnimating; }
 	bool roofMoving() const { return roof_moving; }
+
+	~Maze() {
+		delete player;
+		delete ground;
+	}
 };
 
 class DisplayBasis {

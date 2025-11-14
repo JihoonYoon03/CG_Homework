@@ -109,6 +109,7 @@ GLvoid drawScene()
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 	glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), 0.0f);
 	XYZ->Render();
 	maze->Render(shaderProgramID);
@@ -153,8 +154,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'r':
 		break;
 	case 'v':
-		maze->setRoofHeight(-0.4f);
-		maze->displayPlayer(true);
+		maze->setRoofHeight(-1.0f);
+		break;
+	case 's':
+		// 토글
+		maze->displayPlayer();
 		break;
 	case 'q':
 		exit(0);

@@ -194,7 +194,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 	case 'r':
 		break;
 	case 'v':
-		maze->setRoofHeight(-1.0f);
+		maze->setRoofHeight(0.0f);
 		break;
 	case 's':
 		// 토글

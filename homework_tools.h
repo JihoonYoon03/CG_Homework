@@ -168,7 +168,6 @@ public:
 	glm::vec3 getAtFPS();
 	glm::vec3 getEyeTPS();
 	glm::vec3 getAtTPS();
-	void cameraRotation(glm::vec3 angle);
 
 	void reset() override;
 };
@@ -207,7 +206,6 @@ public:
 	glm::vec3 getPlayerAtFPS() const { return player->getAtFPS(); }
 	glm::vec3 getPlayerEyeTPS() const { return player->getEyeTPS(); }
 	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
-	void setPlayerCameraRotation(GLfloat angleX, GLfloat angleY);
 
 	void movePlayer() { player->move(); }
 

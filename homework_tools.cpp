@@ -91,7 +91,7 @@ void Cube::roofMove() {
 }
 
 void Cube::setRoofHeight(GLfloat height) {
-	roof_move_amount = height;
+	roof_move_amount = height - initial_scale[1].y * 1.0f;
 }
 
 void Cube::addRoofMoveSpeed(GLfloat speed) {

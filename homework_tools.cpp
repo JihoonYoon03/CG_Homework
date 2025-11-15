@@ -105,6 +105,17 @@ void Cube::addRoofMoveSpeed(GLfloat speed) {
 	}
 }
 
+glm::vec4 Cube::getBoundingBox() {
+	glm::mat4 modelMatrix = getModelMatrix();
+	glm::vec3 minX = { -0.5f, 0.0f, 0.0f }, maxX = { 0.5f, 0.0f, 0.0f };
+	glm::vec3 minZ = { 0.0f, 0.0f, -0.5f }, maxZ = { 0.0f, 0.0f, 0.5f };
+	minX = glm::vec3(modelMatrix * glm::vec4(minX, 1.0f));
+	maxX = glm::vec3(modelMatrix * glm::vec4(maxX, 1.0f));
+	minZ = glm::vec3(modelMatrix * glm::vec4(minZ, 1.0f));
+	maxZ = glm::vec3(modelMatrix * glm::vec4(maxZ, 1.0f));
+	return glm::vec4(minX.x, maxX.x, minZ.z, maxZ.z);
+}
+
 void Cube::Render() {
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -120,9 +131,79 @@ void Cube::reset() {
 
 Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : Cube(scaling, rotation, location, color) {}
 
-void Player::move() {
+void Player::move(std::vector<Cube>& walls, const std::vector<bool>& isWall) {
 	if (move_delta_x == 0.0f && move_delta_z == 0.0f) return;
-	this->translating({ move_delta_x, 0.0f, move_delta_z });
+
+	// 원본 delta 백업
+	GLfloat original_delta_x = move_delta_x;
+	GLfloat original_delta_z = move_delta_z;
+	
+	// 이동량을 임시 변수로 관리
+	GLfloat temp_delta_x = move_delta_x;
+	GLfloat temp_delta_z = move_delta_z;
+
+	// 먼저 이동을 적용하여 최신 위치 반영
+	this->translating({ temp_delta_x, 0.0f, temp_delta_z });
+	
+	// 최신 바운딩 박스로 충돌 체크
+	glm::vec4 playerBox = getBoundingBox();
+
+	// 모든 벽과 충돌 체크
+	bool xBlocked = false;
+	bool zBlocked = false;
+	
+	for (size_t i = 0; i < walls.size(); i++) {
+		if (!isWall[i]) continue;
+
+		glm::vec4 wallBox = walls[i].getBoundingBox();
+
+		// 현재 겹침 상태 확인
+		bool xOverlap = (playerBox.y > wallBox.x) && (playerBox.x < wallBox.y);
+		bool zOverlap = (playerBox.w > wallBox.z) && (playerBox.z < wallBox.w);
+
+		// 완전히 겹쳐있으면 충돌
+		if (xOverlap && zOverlap) {
+			// X축 방향 체크 (엡실론 추가)
+			const float epsilon = 0.0001f;
+			if (original_delta_x > epsilon) {
+				// 오른쪽에서 왼쪽 벽에 충돌
+				xBlocked = true;
+				std::cout << "Blocked X+ direction at wall " << i << "\n";
+			}
+			else if (original_delta_x < -epsilon) {
+				// 왼쪽에서 오른쪽 벽에 충돌
+				xBlocked = true;
+				std::cout << "Blocked X- direction at wall " << i << "\n";
+			}
+
+			if (original_delta_z > epsilon) {
+				zBlocked = true;
+				std::cout << "Blocked Z+ direction at wall " << i << "\n";
+			}
+			else if (original_delta_z < -epsilon) {
+				zBlocked = true;
+				std::cout << "Blocked Z- direction at wall " << i << "\n";
+			}
+		}
+	}
+
+	// 충돌한 경우 이동 취소 후 방향별로 재이동
+	if (xBlocked || zBlocked) {
+		// 방금 적용한 이동 취소
+		this->translating({ -temp_delta_x, 0.0f, -temp_delta_z });
+		
+		// 막히지 않은 축만 이동
+		GLfloat safe_x = xBlocked ? 0.0f : temp_delta_x;
+		GLfloat safe_z = zBlocked ? 0.0f : temp_delta_z;
+		
+		if (safe_x != 0.0f || safe_z != 0.0f) {
+			this->translating({ safe_x, 0.0f, safe_z });
+		}
+	}
+
+	// 원본 delta 복원 (키 입력 상태 유지)
+	move_delta_x = original_delta_x;
+	move_delta_z = original_delta_z;
 }
 
 glm::vec3 Player::getEyeFPS() {
@@ -176,7 +257,7 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				GLfloat scaleZ = lengthPerRow * 0.2f;
 				player_start_pos = glm::vec3(xyz.x, scaleX + scaleZ, xyz.z);
 				player_start_idx = { x, y };
-				player = new Player(glm::vec3(scaleX, scaleX + scaleZ, scaleZ), glm::vec3(0.0f, 0.0f, 0.0f), player_start_pos, glm::vec3(1.0f, 1.0f, 0.0f));
+				player = new Player(glm::vec3(scaleX, scaleX + scaleZ, scaleZ), glm::vec3(0.0f, 0.0f, 0.0f), player_start_pos, glm::vec3(1.0f, 0.0f, 0.0f));
 				start_pos = true;
 			}
 
@@ -351,7 +432,7 @@ void Maze::makeMaze() {
 	for (int i = 0; i < row * col; i++) {
 		glm::vec3 wall_pos = walls[i].getCenter();
 		if (isWall[i] && wall_pos != player_start_pos && wall_pos != maze_end_pos) {
-			walls[i].setRoofHeight(0.1f);
+			walls[i].setRoofHeight(0.2f);
 		}
 		else {
 			walls[i].setRoofHeight(0.0f);

@@ -112,7 +112,7 @@ GLvoid drawScene()
 	// 메인 카메라
 	glViewport(0, 0, winWidth, winHeight);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-	glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), lightColor.x, lightColor.y, lightColor.z);
+	glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), lightColor.x, lightColor.y, lightColor.z); 
 	glUniform1f(glGetUniformLocation(shaderProgramID, "shininess"), shininess);
 	glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
 

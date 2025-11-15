@@ -150,6 +150,8 @@ public:
 	void addRoofMoveSpeed(GLfloat speed);
 	float getRoofMoveAmount() const { return roof_move_amount; }
 
+	glm::vec4 getBoundingBox();
+
 	void Render();
 
 	virtual void reset();
@@ -163,7 +165,7 @@ public:
 
 	void addMoveDeltaX(GLfloat delta) { move_delta_x += delta; }
 	void addMoveDeltaZ(GLfloat delta) { move_delta_z += delta; }
-	void move();
+	void move(std::vector<Cube>& walls, const std::vector<bool>& isWall);
 
 	glm::vec3 getEyeFPS();
 	glm::vec3 getAtFPS();
@@ -241,7 +243,8 @@ public:
 	glm::vec3 getPlayerEyeTPS() const { return player->getEyeTPS(); }
 	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
 
-	void movePlayer() { player->move(); }
+	void movePlayer() { player->move(walls, isWall); }
+	void checkPlayerCollision();
 
 	void keyUpPressed() { player->addMoveDeltaZ(-player_speed); }
 	void keyDownPressed() { player->addMoveDeltaZ(player_speed); }

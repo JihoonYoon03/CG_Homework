@@ -131,7 +131,7 @@ void Cube::reset() {
 
 Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : Cube(scaling, rotation, location, color) {}
 
-void Player::move(std::vector<Cube>& walls, const std::vector<bool>& isWall) {
+void Player::move(std::vector<Cube>& walls, const std::vector<bool>& isWall, const glm::vec4& groundBounds) {
 	if (move_delta_x == 0.0f && move_delta_z == 0.0f) return;
 
 	// 원본 delta 백업
@@ -148,41 +148,61 @@ void Player::move(std::vector<Cube>& walls, const std::vector<bool>& isWall) {
 	// 최신 바운딩 박스로 충돌 체크
 	glm::vec4 playerBox = getBoundingBox();
 
-	// 모든 벽과 충돌 체크
+	// groundBounds: x = minX, y = maxX, z = minZ, w = maxZ
+	// 바닥 경계를 벗어나는지 체크
 	bool xBlocked = false;
 	bool zBlocked = false;
 	
-	for (size_t i = 0; i < walls.size(); i++) {
-		if (!isWall[i]) continue;
+	const float epsilon = 0.0001f;
+	
+	// 바닥 경계 체크
+	if (playerBox.x < groundBounds.x + epsilon) {
+		xBlocked = true;
+	}
+	else if (playerBox.y > groundBounds.y - epsilon) {
+		xBlocked = true;
+	}
+	
+	if (playerBox.z < groundBounds.z + epsilon) {
+		zBlocked = true;
+	}
+	else if (playerBox.w > groundBounds.w - epsilon) {
+		zBlocked = true;
+	}
 
-		glm::vec4 wallBox = walls[i].getBoundingBox();
+	// 벽과 충돌 체크
+	if (!xBlocked || !zBlocked) {
+		for (size_t i = 0; i < walls.size(); i++) {
+			if (!isWall[i]) continue;
 
-		// 현재 겹침 상태 확인
-		bool xOverlap = (playerBox.y > wallBox.x) && (playerBox.x < wallBox.y);
-		bool zOverlap = (playerBox.w > wallBox.z) && (playerBox.z < wallBox.w);
+			glm::vec4 wallBox = walls[i].getBoundingBox();
 
-		// 완전히 겹쳐있으면 충돌
-		if (xOverlap && zOverlap) {
-			// X축 방향 체크 (엡실론 추가)
-			const float epsilon = 0.0001f;
-			if (original_delta_x > epsilon) {
-				// 오른쪽에서 왼쪽 벽에 충돌
-				xBlocked = true;
-				std::cout << "Blocked X+ direction at wall " << i << "\n";
-			}
-			else if (original_delta_x < -epsilon) {
-				// 왼쪽에서 오른쪽 벽에 충돌
-				xBlocked = true;
-				std::cout << "Blocked X- direction at wall " << i << "\n";
-			}
+			// 현재 겹침 상태 확인
+			bool xOverlap = (playerBox.y > wallBox.x) && (playerBox.x < wallBox.y);
+			bool zOverlap = (playerBox.w > wallBox.z) && (playerBox.z < wallBox.w);
 
-			if (original_delta_z > epsilon) {
-				zBlocked = true;
-				std::cout << "Blocked Z+ direction at wall " << i << "\n";
-			}
-			else if (original_delta_z < -epsilon) {
-				zBlocked = true;
-				std::cout << "Blocked Z- direction at wall " << i << "\n";
+			// 완전히 겹쳐있으면 충돌
+			if (xOverlap && zOverlap) {
+				// X축 방향 체크
+				if (original_delta_x > epsilon) {
+					// 오른쪽에서 왼쪽 벽에 충돌
+					xBlocked = true;
+					std::cout << "Blocked X+ direction at wall " << i << "\n";
+				}
+				else if (original_delta_x < -epsilon) {
+					// 왼쪽에서 오른쪽 벽에 충돌
+					xBlocked = true;
+					std::cout << "Blocked X- direction at wall " << i << "\n";
+				}
+
+				if (original_delta_z > epsilon) {
+					zBlocked = true;
+					std::cout << "Blocked Z+ direction at wall " << i << "\n";
+				}
+				else if (original_delta_z < -epsilon) {
+					zBlocked = true;
+					std::cout << "Blocked Z- direction at wall " << i << "\n";
+				}
 			}
 		}
 	}

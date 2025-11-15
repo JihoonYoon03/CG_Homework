@@ -165,12 +165,15 @@ public:
 
 	void addMoveDeltaX(GLfloat delta) { move_delta_x += delta; }
 	void addMoveDeltaZ(GLfloat delta) { move_delta_z += delta; }
-	void move(std::vector<Cube>& walls, const std::vector<bool>& isWall);
+	void move(std::vector<Cube>& walls, const std::vector<bool>& isWall, const glm::vec4& groundBounds);
 
 	glm::vec3 getEyeFPS();
 	glm::vec3 getAtFPS();
 	glm::vec3 getEyeTPS();
 	glm::vec3 getAtTPS();
+
+	bool checkCollision(const glm::vec4& box);
+	void handleCollision(Cube& other);
 
 	void reset() override;
 };
@@ -243,7 +246,7 @@ public:
 	glm::vec3 getPlayerEyeTPS() const { return player->getEyeTPS(); }
 	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
 
-	void movePlayer() { player->move(walls, isWall); }
+	void movePlayer() { player->move(walls, isWall, ground->getBoundingBox()); }
 	void checkPlayerCollision();
 
 	void keyUpPressed() { player->addMoveDeltaZ(-player_speed); }

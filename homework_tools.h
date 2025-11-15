@@ -189,6 +189,10 @@ class Maze {
 			if (row != other.row) return row < other.row;
 			return col < other.col;
 		}
+
+		bool operator==(const IndexPos& other) const {
+			return col == other.col && row == other.row;
+		}
 	};
 
 	struct CostEdge
@@ -227,6 +231,7 @@ public:
 	void setRoofHeight(GLfloat height);
 	void addRoofMoveSpeed(GLfloat speed);
 
+	void findPath();
 	void makeMaze();
 
 	void togglePlayer() { display_player = !display_player; }

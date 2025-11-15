@@ -3,14 +3,14 @@
 Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 color) : center(location) {
 	// 초기 변환 행렬 설정
 	initial_translate = glm::translate(glm::mat4(1.0f), location);
-	
+
 	initial_rotate = glm::mat4(1.0f);
 	initial_rotate = glm::rotate(initial_rotate, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	initial_rotate = glm::rotate(initial_rotate, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	initial_rotate = glm::rotate(initial_rotate, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-	
+
 	initial_scale = glm::scale(glm::mat4(1.0f), scaling);
-	
+
 	// 원본 정점 데이터를 vertices 배열에 복사
 	for (int i = 0; i < 24; i++) {
 		vertices[i] = original_vertices[i];
@@ -187,25 +187,31 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				end_pos = true;
 			}
 
-			glm::vec3 color {
+			glm::vec3 color{
 				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
 				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
 				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f
 			};
 
 			animation_goal.push_back(xyz);
-			
+
 			glm::vec3 offset = color * 4.0f;
 			animation_start.push_back(xyz + offset);
 
 			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
 			walls.back().translating(offset);
 
-			if (col % 2 == 0 && x == col - 2 && y > 0 && y < row - 1) {
-				isWall.push_back(false);
-			}
-			else if (row % 2 == 0 && y == row - 2 && x > 0 && x < col - 1) {
-				isWall.push_back(false);
+			// 행 또는 열이 짝수개일 때, 최외곽 -1 번째 벽은 반드시 통로로
+			if ((col % 2 == 0 && x == col - 2 && y > 0 && y < row - 1) ||
+				(row % 2 == 0 && y == row - 2 && x > 0 && x < col - 1)) {
+				
+				// 복잡성을 위해 홀수 통로는 뚫고
+				if (x % 2 == 1 || y % 2 == 1)
+					isWall.push_back(false);
+
+				// 짝수 벽은 랜덤
+				else
+					isWall.push_back(rand() % 2 == 0 ? false : true);
 			}
 			else if ((x % 2 == 0 || y % 2 == 0 || x == col - 1 || y == row - 1) && !start_pos && !end_pos) {
 				isWall.push_back(true);
@@ -215,9 +221,8 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				if (start_pos || end_pos) continue;
 
 				// 우측 통로에 대한 엣지 비용 설정 및 edges에 양방향 추가
-				if (x < col) {
+				if (x + 2 < col) {
 					int randVal = rand() % 100;
-					std::cout << "Edge from (" << x << ", " << y << ") to (" << x + 2 << ", " << y << ") with cost " << randVal << std::endl;
 					IndexPos u{ x, y };
 					IndexPos v{ x + 2, y };
 					edges[u].push_back({ randVal, v });
@@ -225,9 +230,8 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				}
 
 				// 아래 통로에 대한 ''
-				if (y < row - 2) {
+				if (y + 2 < row) {
 					int randVal = rand() % 100;
-					std::cout << "Edge from (" << x << ", " << y << ") to (" << x << ", " << y + 2 << ") with cost " << randVal << std::endl;
 					IndexPos u{ x, y };
 					IndexPos v{ x, y + 2 };
 					edges[u].push_back({ randVal, v });
@@ -277,8 +281,73 @@ void Maze::addRoofMoveSpeed(GLfloat speed) {
 	}
 }
 
+void Maze::findPath() {
+	std::map<IndexPos, bool> added;
+	std::map<IndexPos, IndexPos> parent;
+	std::map<IndexPos, int> best;
+
+	for (int y = 1; y < row - 1; y += 2)
+	{
+		for (int x = 1; x < col - 1; x += 2)
+		{
+			IndexPos pos{ x, y };
+			best[pos] = INT32_MAX;
+			added[pos] = false;
+		}
+	}
+
+	std::priority_queue<CostEdge> pq;
+	IndexPos startPos = { col / 2, row / 2 };
+	if (row / 2 % 2 == 0) startPos.row += 1;
+	if (col / 2 % 2 == 0) startPos.col += 1;
+
+	pq.push(CostEdge{ 0, startPos });
+	best[startPos] = 0;
+	parent[startPos] = startPos;
+
+	while (!pq.empty())
+	{
+		CostEdge bestEdge = pq.top();
+		pq.pop();
+
+		IndexPos v = bestEdge.pos;
+
+		// 이미 추가되었다면 스킵
+		if (added[v])
+			continue;
+
+		added[v] = true;
+
+		// 시작점이 아닌 경우에만 벽 제거
+		if (!(parent[v] == v)) {
+			int wall_x = (parent[v].col + v.col) / 2;
+			int wall_y = (parent[v].row + v.row) / 2;
+			int wall_idx = wall_y * col + wall_x;
+			isWall[wall_idx] = false;
+		}
+
+		// 인접한 간선들을 검사
+		auto it = edges.find(v);
+		if (it != edges.end()) {
+			for (const CostEdge& edge : it->second)
+			{
+				if (added[edge.pos])
+					continue;
+
+				if (edge.cost >= best[edge.pos])
+					continue;
+
+				best[edge.pos] = edge.cost;
+				parent[edge.pos] = v;
+				pq.push({ -edge.cost, edge.pos });
+			}
+		}
+	}
+}
+
 void Maze::makeMaze() {
 	roof_moving = false;
+	findPath();
 	for (int i = 0; i < row * col; i++) {
 		glm::vec3 wall_pos = walls[i].getCenter();
 		if (isWall[i] && wall_pos != player_start_pos && wall_pos != maze_end_pos) {
@@ -295,14 +364,14 @@ void Maze::Render(const GLuint& shaderProgramID) {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(ground->getModelMatrix()));
 	glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), 0.0f);
 	ground->Render();
-	
+
 	// player 렌더링
 	if (display_player) {
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(player->getModelMatrix()));
 		glUniform1f(glGetUniformLocation(shaderProgramID, "roofYOffset"), 0.0f);
 		player->Render();
 	}
-	
+
 	// walls 렌더링
 	for (auto& wall : walls) {
 		glm::mat4 model = wall.getModelMatrix();

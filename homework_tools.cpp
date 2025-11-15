@@ -51,22 +51,34 @@ Cube::Cube(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::vec3 
 }
 
 void Cube::scaling(glm::vec3 amount) {
-	scale = glm::scale(scale, amount);
+	transform_queue.push(glm::scale(glm::mat4(1.0f), amount));
 }
 
 void Cube::rotating(glm::vec3 amount) {
+	glm::mat4 rotate = glm::mat4(1.0f);
 	rotate = glm::rotate(rotate, glm::radians(amount.x), glm::vec3(1.0f, 0.0f, 0.0f));
 	rotate = glm::rotate(rotate, glm::radians(amount.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	rotate = glm::rotate(rotate, glm::radians(amount.z), glm::vec3(0.0f, 0.0f, 1.0f));
+	transform_queue.push(rotate);
 }
 
 void Cube::translating(glm::vec3 amount) {
-	translate = glm::translate(translate, amount);
+	transform_queue.push(glm::translate(glm::mat4(1.0f), amount));
 }
 
-glm::mat4 Cube::getModelMatrix() const {
+glm::mat4 Cube::getModelMatrix() {
+	while (!transform_queue.empty()) {
+		additional_transform *= transform_queue.front();
+		transform_queue.pop();
+	}
+
 	// 추가 변환 * 초기 변환
-	return translate * rotate * scale * initial_translate * initial_rotate * initial_scale;
+	return additional_transform * initial_translate * initial_rotate * initial_scale;
+}
+
+glm::vec3 Cube::getCenter() {
+	glm::mat4 model = getModelMatrix();  // 큐 처리
+	return glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
 void Cube::roofMove() {
@@ -99,9 +111,9 @@ void Cube::Render() {
 }
 
 void Cube::reset() {
-	translate = glm::mat4(1.0f);
-	rotate = glm::mat4(1.0f);
-	scale = glm::mat4(1.0f);
+	while (!transform_queue.empty())
+		transform_queue.pop();
+	additional_transform = glm::mat4(1.0f);
 	roof_move_speed_offset = 0.0f;
 	roof_move_amount = 0.0f;
 }
@@ -110,38 +122,31 @@ Player::Player(glm::vec3 scaling, glm::vec3 rotation, glm::vec3 location, glm::v
 
 void Player::move() {
 	if (move_delta_x == 0.0f && move_delta_z == 0.0f) return;
-
-	move_amount_x += move_delta_x;
-	move_amount_z += move_delta_z;
-	
-	// 추가 변환을 초기화하고 새로운 위치로 설정
-	translate = glm::translate(glm::mat4(1.0f), glm::vec3(move_amount_x, 0.0f, move_amount_z));
+	this->translating({ move_delta_x, 0.0f, move_delta_z });
 }
 
-glm::vec3 Player::getEyeFPS() const {
+glm::vec3 Player::getEyeFPS() {
 	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 0.55f, 0.0f, 1.0f);
 	return glm::vec3(eyePos);
 }
 
-glm::vec3 Player::getAtFPS() const {
+glm::vec3 Player::getAtFPS() {
 	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.55f, -1.0f, 1.0f);
 	return glm::vec3(atPos);
 }
 
-glm::vec3 Player::getEyeTPS() const {
+glm::vec3 Player::getEyeTPS() {
 	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 1.5f, 7.0f, 1.0f);
 	return glm::vec3(eyePos);
 }
 
-glm::vec3 Player::getAtTPS() const {
+glm::vec3 Player::getAtTPS() {
 	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
 	return glm::vec3(atPos);
 }
 
 void Player::reset() {
 	Cube::reset();
-	move_amount_x = 0.0f;
-	move_amount_z = 0.0f;
 	move_delta_x = 0.0f;
 	move_delta_z = 0.0f;
 }
@@ -181,35 +186,32 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f
 			};
 
-			// 메이즈 생성 애니메이션: 목표 위치는 xyz
 			animation_goal.push_back(xyz);
 			
-			// 애니메이션 시작 위치 (목표에서 color 방향으로 4배 떨어진 곳)
 			glm::vec3 offset = color * 4.0f;
 			animation_start.push_back(xyz + offset);
 
-			// 큐브를 목표 위치(xyz)에 생성하되, 시작 오프셋을 적용
 			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
-			// 초기 오프셋 설정
-			walls.back().translate = glm::translate(glm::mat4(1.0f), offset);
+			walls.back().translating(offset);
 		}
 	}
 }
 
 void Maze::startingAnimation() {
 	for (size_t i = 0; i < walls.size(); i++) {
-		glm::vec3 start_offset = animation_start[i] - animation_goal[i];
-		
+		glm::vec3 current_pos = walls[i].getCenter();
+
+		glm::vec3 distance = animation_goal[i] - animation_start[i];
+		glm::vec3 target_pos = animation_start[i] + distance * animation_elapsed;
+
 		if (animation_elapsed >= 1.0f) {
 			isAnimating = false;
-			// 애니메이션 완료: 추가 변환 제거 (초기 위치로)
-			walls[i].translate = glm::mat4(1.0f);
+			target_pos = animation_goal[i];
 		}
-		else {
-			// 선형 보간: start_offset에서 0으로
-			glm::vec3 current_offset = start_offset * (1.0f - animation_elapsed);
-			walls[i].translate = glm::translate(glm::mat4(1.0f), current_offset);
-		}
+
+		glm::vec3 delta = target_pos - current_pos;
+
+		walls[i].translating(delta);
 	}
 	animation_elapsed += animation_speed;
 }
@@ -231,6 +233,10 @@ void Maze::addRoofMoveSpeed(GLfloat speed) {
 	for (auto& wall : walls) {
 		wall.addRoofMoveSpeed(speed);
 	}
+}
+
+void Maze::setPlayerCameraRotation(GLfloat angleX, GLfloat angleY) {
+
 }
 
 void Maze::Render(const GLuint& shaderProgramID) {

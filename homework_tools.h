@@ -131,33 +131,31 @@ protected:
 	glm::mat4 initial_rotate = glm::mat4(1.0f);
 	glm::mat4 initial_translate = glm::mat4(1.0f);
 
-public:
 	// 추가 변환 (runtime에 변경 가능) - Maze에서 접근할 수 있도록 public
-	glm::mat4 scale = glm::mat4(1.0f);
-	glm::mat4 rotate = glm::mat4(1.0f);
-	glm::mat4 translate = glm::mat4(1.0f);
+	std::queue<glm::mat4> transform_queue;
+	glm::mat4 additional_transform = glm::mat4(1.0f);
+public:
 
 	Cube(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
 
 	void scaling(glm::vec3 amount);
 	void rotating(glm::vec3 amount);
 	void translating(glm::vec3 amount);
-	glm::mat4 getModelMatrix() const;
+	glm::mat4 getModelMatrix();
+	glm::vec3 getCenter();
 
 	void roofMove();
 	void setRoofHeight(GLfloat height);
 	void addRoofMoveSpeed(GLfloat speed);
+	float getRoofMoveAmount() const { return roof_move_amount; }
 
 	void Render();
-	glm::vec3 getCenter() const { return center; }
-	float getRoofMoveAmount() const { return roof_move_amount; }
 
 	virtual void reset();
 };
 
 class Player : public Cube {
 	GLfloat move_delta_x = 0.0f, move_delta_z = 0.0f;
-	GLfloat move_amount_x = 0.0f, move_amount_z = 0.0f;
 
 public:
 	Player(glm::vec3 scaling = { 1.0f, 1.0f, 1.0f }, glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }, glm::vec3 location = { 0.0f, 0.0f, 0.0f }, glm::vec3 color = { 1.0f, 1.0f, 1.0f });
@@ -166,10 +164,10 @@ public:
 	void addMoveDeltaZ(GLfloat delta) { move_delta_z += delta; }
 	void move();
 
-	glm::vec3 getEyeFPS() const;
-	glm::vec3 getAtFPS() const;
-	glm::vec3 getEyeTPS() const;
-	glm::vec3 getAtTPS() const;
+	glm::vec3 getEyeFPS();
+	glm::vec3 getAtFPS();
+	glm::vec3 getEyeTPS();
+	glm::vec3 getAtTPS();
 
 	void reset() override;
 };
@@ -208,6 +206,7 @@ public:
 	glm::vec3 getPlayerAtFPS() const { return player->getAtFPS(); }
 	glm::vec3 getPlayerEyeTPS() const { return player->getEyeTPS(); }
 	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
+	void setPlayerCameraRotation(GLfloat angleX, GLfloat angleY);
 
 	void movePlayer() { player->move(); }
 

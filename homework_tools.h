@@ -230,7 +230,8 @@ public:
 	void roofAnimation();
 	bool roofMoving() const { return roof_moving; }
 	void setRoofMoving(bool move) { roof_moving = move; }
-	void setRoofHeight(GLfloat height);
+	void lockRoofHeight(GLfloat height);
+	void unlockRoofHeight();
 	void addRoofMoveSpeed(GLfloat speed);
 
 	void findPath();
@@ -256,7 +257,7 @@ public:
 	void keyRightReleased() { player->addMoveDeltaX(-player_speed); }
 
 	void Render(const GLuint& shaderProgramID);
-	void reset();
+	void reset(int newrow, int newcol);
 
 	~Maze() {
 		delete player;

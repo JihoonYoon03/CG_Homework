@@ -341,7 +341,6 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 			}
 		}
 	}
-	std::cout << "start: (" << start_col << ", " << start_row << "), end: (" << end_col << ", " << end_row << ")\n";
 }
 
 void Maze::startingAnimation() {
@@ -369,10 +368,17 @@ void Maze::roofAnimation() {
 	}
 }
 
-void Maze::setRoofHeight(GLfloat height) {
+void Maze::lockRoofHeight(GLfloat height) {
 	roof_moving = false;
 	for (auto& wall : walls) {
 		wall.setRoofHeight(height);
+	}
+}
+
+void Maze::unlockRoofHeight() {
+	roof_moving = true;
+	for (auto& wall : walls) {
+		wall.setRoofHeight(1.0f);
 	}
 }
 
@@ -482,16 +488,116 @@ void Maze::Render(const GLuint& shaderProgramID) {
 	}
 }
 
-void Maze::reset() {
-	player->reset();
+void Maze::reset(int newrow, int newcol) {
+	delete player;
+	player = nullptr;
+
 	for (auto& wall : walls) {
 		wall.reset();
 	}
+
 	animation_elapsed = 0.0f;
 	isAnimating = true;
 	roof_moving = false;
 	display_player = false;
 	animation_elapsed = 0.0f;
+
+	walls.clear();
+	isWall.clear();
+	edges.clear();
+
+	animation_start.clear();
+	animation_goal.clear();
+	
+	row = newrow;
+	col = newcol;
+
+	// 재생성
+	GLfloat widthPerCol = width / col;
+	GLfloat lengthPerRow = length / row;
+
+	GLint start_row = row - 1, start_col, end_row = 0, end_col;
+	start_col = 1 + 2 * (rand() % ((col - 2) / 2));
+	end_col = 1 + 2 * (rand() % ((col - 2) / 2));
+
+	for (int y = 0; y < row; y++) {
+		for (int x = 0; x < col; x++) {
+			glm::vec3 xyz{
+				-width / 2.0f + widthPerCol / 2 + widthPerCol * x,
+				0.5f,
+				-length / 2.0f + lengthPerRow / 2 + lengthPerRow * y
+			};
+
+			bool start_pos = false;
+			if (y == start_row && x == start_col) {
+				GLfloat scaleX = widthPerCol * 0.2f;
+				GLfloat scaleZ = lengthPerRow * 0.2f;
+				player_start_pos = glm::vec3(xyz.x, scaleX + scaleZ, xyz.z);
+				player_start_idx = { x, y };
+				player = new Player(glm::vec3(scaleX, scaleX + scaleZ, scaleZ), glm::vec3(0.0f, 0.0f, 0.0f), player_start_pos, glm::vec3(1.0f, 0.0f, 0.0f));
+				start_pos = true;
+			}
+
+			bool end_pos = false;
+			if (y == end_row && x == end_col) {
+				maze_end_pos = xyz;
+				maze_end_idx = { x, y };
+				end_pos = true;
+			}
+
+			glm::vec3 color{
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f,
+				static_cast<GLfloat>(rand()) / RAND_MAX * 1.5f - 0.5f
+			};
+
+			animation_goal.push_back(xyz);
+
+			glm::vec3 offset = color * 4.0f;
+			animation_start.push_back(xyz + offset);
+
+			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
+			walls.back().translating(offset);
+
+			// 행 또는 열이 짝수개일 때, 최외곽 -1 번째 벽은 반드시 통로로
+			if ((col % 2 == 0 && x == col - 2 && y > 0 && y < row - 1) ||
+				(row % 2 == 0 && y == row - 2 && x > 0 && x < col - 1)) {
+
+				// 복잡성을 위해 홀수 통로는 뚫고
+				if (x % 2 == 1 || y % 2 == 1)
+					isWall.push_back(false);
+
+				// 짝수 벽은 랜덤
+				else
+					isWall.push_back(rand() % 2 == 0 ? false : true);
+			}
+			else if ((x % 2 == 0 || y % 2 == 0 || x == col - 1 || y == row - 1) && !start_pos && !end_pos) {
+				isWall.push_back(true);
+			}
+			else {
+				isWall.push_back(false);
+				if (start_pos || end_pos) continue;
+
+				// 우측 통로에 대한 엣지 비용 설정 및 edges에 양방향 추가
+				if (x + 2 < col) {
+					int randVal = rand() % 100;
+					IndexPos u{ x, y };
+					IndexPos v{ x + 2, y };
+					edges[u].push_back({ randVal, v });
+					edges[v].push_back({ randVal, u });
+				}
+
+				// 아래 통로에 대한 ''
+				if (y + 2 < row) {
+					int randVal = rand() % 100;
+					IndexPos u{ x, y };
+					IndexPos v{ x, y + 2 };
+					edges[u].push_back({ randVal, v });
+					edges[v].push_back({ randVal, u });
+				}
+			}
+		}
+	}
 }
 
 DisplayBasis::DisplayBasis(GLfloat offset, const glm::vec3& origin) : origin(origin) {

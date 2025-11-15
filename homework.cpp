@@ -192,6 +192,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			camera_rot_dir = 0.0f;
 		break;
 	case 'r':
+		maze->makeMaze();
 		break;
 	case 'v':
 		maze->setRoofHeight(0.0f);

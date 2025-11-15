@@ -155,29 +155,36 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 	GLfloat widthPerCol = width / col;
 	GLfloat lengthPerRow = length / row;
 
-	ground = new Cube(glm::vec3(width, 0.00005f, length), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.3f, 0.3f, 0.3f));
+	ground = new Cube(glm::vec3(width, 0.00005f, length), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
 	srand(static_cast<unsigned int>(time(0)));
 	GLint start_row = row - 1, start_col, end_row = 0, end_col;
 	start_col = rand() % (col - 2) + 1;
 	end_col = rand() % (col - 2) + 1;
 
-	for (int i = 0; i < row; i++) {
-		for (int j = 0; j < col; j++) {
+	for (int y = 0; y < row; y++) {
+		for (int x = 0; x < col; x++) {
 			glm::vec3 xyz{
-				-width / 2.0f + widthPerCol / 2 + widthPerCol * j,
+				-width / 2.0f + widthPerCol / 2 + widthPerCol * x,
 				0.5f,
-				-length / 2.0f + lengthPerRow / 2 + lengthPerRow * i
+				-length / 2.0f + lengthPerRow / 2 + lengthPerRow * y
 			};
 
-			if (i == start_row && j == start_col) {
+			bool start_pos = false;
+			if (y == start_row && x == start_col) {
 				GLfloat scaleX = widthPerCol * 0.2f;
 				GLfloat scaleZ = lengthPerRow * 0.2f;
 				player_start_pos = glm::vec3(xyz.x, scaleX + scaleZ, xyz.z);
+				player_start_idx = { x, y };
 				player = new Player(glm::vec3(scaleX, scaleX + scaleZ, scaleZ), glm::vec3(0.0f, 0.0f, 0.0f), player_start_pos, glm::vec3(1.0f, 1.0f, 0.0f));
+				start_pos = true;
 			}
-			if (i == end_row && j == end_col) {
+
+			bool end_pos = false;
+			if (y == end_row && x == end_col) {
 				maze_end_pos = xyz;
+				maze_end_idx = { x, y };
+				end_pos = true;
 			}
 
 			glm::vec3 color {
@@ -193,6 +200,13 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 
 			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
 			walls.back().translating(offset);
+
+			if ((x % 2 == 0 || y % 2 == 0 || x == col - 1 || y == row - 1) && !start_pos && !end_pos) {
+				isWall.push_back(true);
+			}
+			else {
+				isWall.push_back(false);
+			}
 		}
 	}
 }
@@ -232,6 +246,19 @@ void Maze::setRoofHeight(GLfloat height) {
 void Maze::addRoofMoveSpeed(GLfloat speed) {
 	for (auto& wall : walls) {
 		wall.addRoofMoveSpeed(speed);
+	}
+}
+
+void Maze::makeMaze() {
+	roof_moving = false;
+	for (int i = 0; i < row * col; i++) {
+		glm::vec3 wall_pos = walls[i].getCenter();
+		if (isWall[i] && wall_pos != player_start_pos && wall_pos != maze_end_pos) {
+			walls[i].setRoofHeight(0.1f);
+		}
+		else {
+			walls[i].setRoofHeight(0.0f);
+		}
 	}
 }
 

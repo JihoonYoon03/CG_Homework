@@ -178,10 +178,30 @@ class Maze {
 	Player* player;
 	GLfloat player_speed = 0.002f;
 	Cube* ground;
+
+	// 랜덤 미로 생성의 Prim 알고리즘 관련 구조체
+	struct IndexPos {
+		int col;
+		int row;
+	};
+
+	struct CostEdge
+	{
+		int cost;
+		IndexPos pos;
+
+		bool operator>(const CostEdge& other) const {
+			return cost > other.cost;
+		}
+	};
+
 	std::vector<Cube> walls;
+	std::vector<bool> isWall; // 벽 or 통로 여부 저장
+
 	std::vector<glm::vec3> animation_start;
 	std::vector<glm::vec3> animation_goal;
 	glm::vec3 player_start_pos, maze_end_pos;
+	IndexPos player_start_idx, maze_end_idx;
 
 	bool isAnimating = true;
 	bool roof_moving = false;
@@ -199,6 +219,8 @@ public:
 	void setRoofMoving(bool move) { roof_moving = move; }
 	void setRoofHeight(GLfloat height);
 	void addRoofMoveSpeed(GLfloat speed);
+
+	void makeMaze();
 
 	void togglePlayer() { display_player = !display_player; }
 	bool isPlayerDisplayed() const { return display_player; }

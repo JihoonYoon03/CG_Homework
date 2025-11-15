@@ -235,10 +235,6 @@ void Maze::addRoofMoveSpeed(GLfloat speed) {
 	}
 }
 
-void Maze::setPlayerCameraRotation(GLfloat angleX, GLfloat angleY) {
-
-}
-
 void Maze::Render(const GLuint& shaderProgramID) {
 	// ground 렌더링
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, "model"), 1, GL_FALSE, glm::value_ptr(ground->getModelMatrix()));

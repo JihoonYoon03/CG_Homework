@@ -168,6 +168,7 @@ public:
 	glm::vec3 getAtFPS();
 	glm::vec3 getEyeTPS();
 	glm::vec3 getAtTPS();
+	void cameraRotation(glm::vec3 angle);
 
 	void reset() override;
 };

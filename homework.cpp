@@ -19,7 +19,7 @@ GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid KeySpecial(int key, int x, int y);
 GLvoid KeySpecialUp(int key, int x, int y);
-GLvoid PassiveMouseMove(int x, int y);
+//GLvoid PassiveMouseMove(int x, int y);
 GLvoid TimerFunc(int value);
 
 GLint winWidth = 1280, winHeight = 720;
@@ -46,8 +46,8 @@ glm::vec3 lightColor{ 1.0f, 1.0f, 1.0f };
 glm::vec3 viewPos = EYE_freecam;
 float shininess = 32.0f;
 
-GLfloat player_cam_rotationX = 0.0f, player_cam_rotationY = 0.0f;
-GLfloat mouse_sensitivity = 0.1f;
+//GLfloat player_cam_rotationX = 0.0f, player_cam_rotationY = 0.0f;
+//GLfloat mouse_sensitivity = 0.1f;
 
 bool perspectiveOn = true, cam_far = true, cam_FPS = false, cam_TPS = false;
 bool keydown_W = false, keydown_S = false, keydown_A = false, keydown_D = false;
@@ -97,7 +97,7 @@ void main(int argc, char** argv)
 	glutKeyboardFunc(Keyboard);
 	glutSpecialFunc(KeySpecial);
 	glutSpecialUpFunc(KeySpecialUp);
-	glutPassiveMotionFunc(PassiveMouseMove);
+	//glutPassiveMotionFunc(PassiveMouseMove);
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 	glutMainLoop();
 	delete maze;
@@ -330,16 +330,16 @@ GLvoid TimerFunc(int value)
 	glutTimerFunc(1000 / 60, TimerFunc, 1);
 }
 
-GLvoid PassiveMouseMove(int x, int y)
-{
-	if (cam_far) return;
-
-	player_cam_rotationX += (x - winWidth / 2) * mouse_sensitivity;
-	player_cam_rotationY += (winHeight / 2 - y) * mouse_sensitivity;
-
-	if (player_cam_rotationY > 89.0f) player_cam_rotationY = 89.0f;
-	if (player_cam_rotationY < -89.0f) player_cam_rotationY = -89.0f;
-
-	maze->setPlayerCameraRotation(player_cam_rotationY, player_cam_rotationX);
-	glutWarpPointer(winWidth / 2, winHeight / 2);
-}
+//GLvoid PassiveMouseMove(int x, int y)
+//{
+//	if (cam_far) return;
+//
+//	player_cam_rotationX += (x - winWidth / 2) * mouse_sensitivity;
+//	player_cam_rotationY += (winHeight / 2 - y) * mouse_sensitivity;
+//
+//	if (player_cam_rotationY > 89.0f) player_cam_rotationY = 89.0f;
+//	if (player_cam_rotationY < -89.0f) player_cam_rotationY = -89.0f;
+//
+//	maze->setPlayerCameraRotation(player_cam_rotationY, player_cam_rotationX);
+//	glutWarpPointer(winWidth / 2, winHeight / 2);
+//}

@@ -159,8 +159,8 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 
 	srand(static_cast<unsigned int>(time(0)));
 	GLint start_row = row - 1, start_col, end_row = 0, end_col;
-	start_col = rand() % (col - 2) + 1;
-	end_col = rand() % (col - 2) + 1;
+	start_col = 1 + 2 * (rand() % ((col - 2) / 2));
+	end_col = 1 + 2 * (rand() % ((col - 2) / 2));
 
 	for (int y = 0; y < row; y++) {
 		for (int x = 0; x < col; x++) {
@@ -201,14 +201,42 @@ Maze::Maze(int row, int col) : row(row), col(col) {
 			walls.push_back(Cube(glm::vec3(widthPerCol, 1.0f, lengthPerRow), glm::vec3(0.0f, 0.0f, 0.0f), xyz, color));
 			walls.back().translating(offset);
 
-			if ((x % 2 == 0 || y % 2 == 0 || x == col - 1 || y == row - 1) && !start_pos && !end_pos) {
+			if (col % 2 == 0 && x == col - 2 && y > 0 && y < row - 1) {
+				isWall.push_back(false);
+			}
+			else if (row % 2 == 0 && y == row - 2 && x > 0 && x < col - 1) {
+				isWall.push_back(false);
+			}
+			else if ((x % 2 == 0 || y % 2 == 0 || x == col - 1 || y == row - 1) && !start_pos && !end_pos) {
 				isWall.push_back(true);
 			}
 			else {
 				isWall.push_back(false);
+				if (start_pos || end_pos) continue;
+
+				// 우측 통로에 대한 엣지 비용 설정 및 edges에 양방향 추가
+				if (x < col) {
+					int randVal = rand() % 100;
+					std::cout << "Edge from (" << x << ", " << y << ") to (" << x + 2 << ", " << y << ") with cost " << randVal << std::endl;
+					IndexPos u{ x, y };
+					IndexPos v{ x + 2, y };
+					edges[u].push_back({ randVal, v });
+					edges[v].push_back({ randVal, u });
+				}
+
+				// 아래 통로에 대한 ''
+				if (y < row - 2) {
+					int randVal = rand() % 100;
+					std::cout << "Edge from (" << x << ", " << y << ") to (" << x << ", " << y + 2 << ") with cost " << randVal << std::endl;
+					IndexPos u{ x, y };
+					IndexPos v{ x, y + 2 };
+					edges[u].push_back({ randVal, v });
+					edges[v].push_back({ randVal, u });
+				}
 			}
 		}
 	}
+	std::cout << "start: (" << start_col << ", " << start_row << "), end: (" << end_col << ", " << end_row << ")\n";
 }
 
 void Maze::startingAnimation() {

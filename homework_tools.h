@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <queue>
+#include <map>
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <gl/freeglut_ext.h>
@@ -183,6 +184,11 @@ class Maze {
 	struct IndexPos {
 		int col;
 		int row;
+
+		bool operator<(const IndexPos& other) const {
+			if (row != other.row) return row < other.row;
+			return col < other.col;
+		}
 	};
 
 	struct CostEdge
@@ -190,13 +196,14 @@ class Maze {
 		int cost;
 		IndexPos pos;
 
-		bool operator>(const CostEdge& other) const {
-			return cost > other.cost;
+		bool operator<(const CostEdge& other) const {
+			return cost < other.cost;
 		}
 	};
 
 	std::vector<Cube> walls;
 	std::vector<bool> isWall; // 벽 or 통로 여부 저장
+	std::map<IndexPos, std::vector<CostEdge>> edges;	// 각 pos별 인접 엣지 저장
 
 	std::vector<glm::vec3> animation_start;
 	std::vector<glm::vec3> animation_goal;

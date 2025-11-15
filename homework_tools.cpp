@@ -227,12 +227,12 @@ void Player::move(std::vector<Cube>& walls, const std::vector<bool>& isWall, con
 }
 
 glm::vec3 Player::getEyeFPS() {
-	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 0.55f, 0.0f, 1.0f);
+	glm::vec4 eyePos = getModelMatrix() * glm::vec4(0.0f, 0.55f, 0.3f, 1.0f);
 	return glm::vec3(eyePos);
 }
 
 glm::vec3 Player::getAtFPS() {
-	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.55f, -1.0f, 1.0f);
+	glm::vec4 atPos = getModelMatrix() * glm::vec4(0.0f, 0.55f, -0.7f, 1.0f);
 	return glm::vec3(atPos);
 }
 

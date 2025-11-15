@@ -172,9 +172,6 @@ public:
 	glm::vec3 getEyeTPS();
 	glm::vec3 getAtTPS();
 
-	bool checkCollision(const glm::vec4& box);
-	void handleCollision(Cube& other);
-
 	void reset() override;
 };
 
@@ -247,7 +244,6 @@ public:
 	glm::vec3 getPlayerAtTPS() const { return player->getAtTPS(); }
 
 	void movePlayer() { player->move(walls, isWall, ground->getBoundingBox()); }
-	void checkPlayerCollision();
 
 	void keyUpPressed() { player->addMoveDeltaZ(-player_speed); }
 	void keyDownPressed() { player->addMoveDeltaZ(player_speed); }

@@ -167,22 +167,28 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
 	case 'o':
+		glutSetCursor(GLUT_CURSOR_INHERIT);
+		cam_FPS = false;
+		cam_TPS = false;
+		cam_far = true;
 		perspectiveOn = false;
 		break;
 	case 'p':
 		perspectiveOn = true;
 		break;
 	case 'z': case 'Z':
-		if (perspectiveOn) {
+		if (perspectiveOn && !cam_FPS && !cam_TPS) {
 			camera_mov_dir = key == 'z' ? -1.0f : 1.0f;
 			EYE_freecam += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
-			AT_freecam += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
+			//AT_freecam += camera_speed * glm::vec3(0.0f, 0.0f, camera_mov_dir);
 		}
 		break;
 	case 'm':
+		if (cam_FPS || cam_TPS) break;
 		maze->setRoofMoving(true);
 		break;
 	case 'M':
+		if (cam_FPS || cam_TPS) break;
 		maze->setRoofMoving(false);
 		break;
 	case 'y': case 'Y':
@@ -193,9 +199,16 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 		break;
 	case 'r':
 		maze->makeMaze();
+		if (!maze->isPlayerDisplayed()) {
+			maze->togglePlayer();
+			glutSetCursor(GLUT_CURSOR_INHERIT);
+			cam_FPS = false;
+			cam_TPS = false;
+			cam_far = true;
+		}
 		break;
 	case 'v':
-		maze->setRoofHeight(0.0f);
+		maze->setRoofHeight(0.25f);
 		break;
 	case 's':
 		// 토글
@@ -222,6 +235,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			}
 			else {
 				glutSetCursor(GLUT_CURSOR_NONE);
+				perspectiveOn = true;
 				cam_FPS = true;
 				cam_TPS = false;
 				cam_far = false;
@@ -237,6 +251,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 			}
 			else {
 				glutSetCursor(GLUT_CURSOR_NONE);
+				perspectiveOn = true;
 				cam_TPS = true;
 				cam_FPS = false;
 				cam_far = false;
